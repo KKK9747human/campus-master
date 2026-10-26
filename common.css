@@ -1,0 +1,385 @@
+/* =====================================================================
+   掌控校园 · 全站统一样式（六个页面共用）
+   设计系统（2026-10-26 第三版，用户反馈：① 别一眼看出模仿 anthropic ② 要更抓人）
+   → 新中式编辑风：暖纸底 + 墨色文字 + 朱砂印泥红主强调 + 赭金/黛青辅色
+   + 印章记号（brand-mark/hero seal）+ 菱形标记 + 压印风偏移硬阴影
+   主按钮方角 10px（弃 pill）；衬线大标题保留；语义色只用于状态
+   ===================================================================== */
+:root {
+  --primary: #B0432E;        /* 朱砂/印泥红：文字/描边档，奶油纸上对比够 */
+  --primary-bright: #C25437; /* 朱砂亮档：填充装饰用 */
+  --primary-hover: #93321F;
+  --primary-soft: rgba(176, 67, 46, .10);
+  --gold: #A87B2F;           /* 赭金：次强调（跑马灯星标/精华徽章/包含边） */
+  --gold-soft: rgba(168, 123, 47, .14);
+  --ink: #211F1A;            /* 墨色：主按钮/激活态底色 */
+  --ink-hover: #3A372F;
+  --bg: #F6F3EA;
+  --card: #FCFBF6;
+  --card-2: #F2EFE4;
+  --border: #E0DBCB;
+  --text: #23211C;
+  --text-sub: #5D5A50;
+  --text-faint: #908C7D;
+  --radius: 14px;
+  --shadow: 4px 4px 0 rgba(35, 33, 28, .05);
+  --ok: #3E6B4F;   --ok-bg: rgba(62, 107, 79, .10);
+  --warn: #8F6A14; --warn-bg: rgba(168, 123, 47, .16);
+  --bad: #A02C2C;  --bad-bg: rgba(160, 44, 44, .08);
+  --info: #33586B; --info-bg: rgba(51, 88, 107, .10);
+  --font-mono: "Cascadia Code", Consolas, "JetBrains Mono", "Courier New", monospace;
+  --font-display: Georgia, "Noto Serif SC", "Source Han Serif SC", SimSun, serif;
+  --font-kai: KaiTi, STKaiti, "Kaiti SC", "Ma Shan Zheng", serif;
+}
+
+* { box-sizing: border-box; }
+::selection { background: rgba(176, 67, 46, .16); }
+body {
+  margin: 0; color: var(--text);
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 14px; line-height: 1.65;
+  /* 暖纸氛围底：顶部朱砂微光 + 极淡墨点阵 */
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1100px 420px at 50% -80px, rgba(176, 67, 46, .06), transparent 62%),
+    radial-gradient(circle at 13px 13px, rgba(35, 33, 28, .032) 1px, transparent 1.6px);
+  background-size: auto, 26px 26px;
+  background-attachment: fixed;
+}
+
+/* 衬线大标题：h1 与卡片主标题走 Georgia/宋体编辑风 */
+h1, .card-title { font-family: var(--font-display); letter-spacing: .01em; }
+
+/* eyebrow：小字距档案标签，朱砂小号大写 */
+.eyebrow {
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: .32em; text-transform: uppercase; color: var(--primary); opacity: .92;
+}
+
+/* 跑马灯：落地页 hero 下的一条细信息带，悬停暂停；星标用赭金菱形 */
+.marquee { overflow: hidden; border-block: 1px solid var(--border); background: var(--card); }
+.marquee-track { display: inline-flex; white-space: nowrap; animation: marquee 42s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee-track span { font-family: var(--font-mono); font-size: 12px; color: var(--text-sub); padding: 8px 0; }
+.marquee-track span + span::before { content: "◆"; color: var(--gold); opacity: .7; margin: 0 18px; font-size: 9px; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* ---- 顶栏 ---- */
+.topbar { background: rgba(252, 251, 246, .86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
+.topbar-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; height: 60px; display: flex; align-items: center; gap: 18px; }
+.brand { font-size: 17px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; white-space: nowrap; text-decoration: none; }
+/* 印章式 brand-mark：朱砂底 + 内嵌奶油描边，像一方小印 */
+.brand-mark { width: 26px; height: 26px; border-radius: 6px; background: var(--primary); color: #FCFBF6; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-family: var(--font-kai); font-weight: 700; box-shadow: inset 0 0 0 1.5px rgba(252, 251, 246, .72); }
+.nav { display: flex; gap: 2px; margin-left: auto; overflow-x: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a { padding: 7px 13px; border-radius: 8px; color: var(--text-sub); text-decoration: none; font-size: 13.5px; white-space: nowrap; }
+.nav a:hover { background: rgba(35, 33, 28, .06); color: var(--text); }
+.nav a.active { background: var(--ink); color: #FCFBF6; font-weight: 600; }
+@media (max-width: 900px) {
+  .topbar-inner { height: auto; padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
+  .nav { margin-left: 0; width: 100%; }
+}
+
+/* ---- 布局 ---- */
+.wrap { max-width: 1280px; margin: 0 auto; padding: 22px 24px 48px; }
+.grid { display: grid; gap: 18px; align-items: start; }
+.grid-2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* 首页排版：一行卡片底边对齐（等高），卡片转纵排后跳转链接统一压到卡底 */
+.grid-eq { align-items: stretch; }
+.grid-eq > .card { display: flex; flex-direction: column; }
+.grid-eq .mod-link { margin-top: auto; align-self: flex-start; padding-top: 12px; }
+.grid-eq > .card > .btn-row:last-child { margin-top: auto; padding-top: 16px; }
+.main-side { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 18px; align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 18px; }
+@media (max-width: 1100px) { .main-side { grid-template-columns: 1fr; } }
+@media (max-width: 960px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .wrap { padding: 16px 14px 40px; } }
+
+
+/* ---- 页头：每页统一「标题 + 一句话说明 + 右侧动作」，底部一道发丝线压住 ---- */
+.page-head { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.page-head h1 { font-size: 24px; font-weight: 700; margin: 0; color: var(--text); }
+.page-head .page-sub { font-family: var(--font-kai); font-size: 13.5px; color: var(--text-sub); margin-bottom: 3px; }
+.page-head .head-actions { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* 卡片：压印风——偏移硬阴影像铅字印在纸上，不糊不腻；底色上铺一层极淡纤维噪点，出纸质手感 */
+.card {
+  background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 22px;
+}
+.card-title { display: flex; align-items: center; gap: 8px; font-size: 15.5px; font-weight: 700; margin: 0 0 14px; }
+.card-title::before { content: ""; width: 7px; height: 7px; border-radius: 1.5px; background: var(--primary); transform: rotate(45deg); flex: none; }
+.card-sub { font-size: 12px; color: var(--text-faint); font-weight: 400; margin-left: 4px; }
+
+/* ---- 分段控件（页内视图/场景切换）---- */
+.segmented { display: inline-flex; background: var(--card-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 3px; flex-wrap: wrap; }
+.segmented button {
+  border: 0; background: none; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--text-sub); padding: 6px 15px; border-radius: 7px; transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.segmented button:hover { color: var(--text); }
+.segmented button.active { background: var(--ink); color: #FCFBF6; }
+
+/* ---- 身份筛选 chips ---- */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--border); background: var(--card); color: var(--text-sub); cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 13px; border-radius: 999px;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.chip:hover { border-color: var(--primary); color: var(--primary); }
+.chip.active { background: var(--ink); border-color: var(--ink); color: #FCFBF6; }
+
+/* ---- 统计小卡 ---- */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.stat { background: var(--bg); border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px; }
+.stat-num { font-family: var(--font-mono); font-size: 21px; font-weight: 800; color: var(--primary); line-height: 1.2; }
+.stat-num.is-bad { color: var(--bad); } .stat-num.is-warn { color: var(--warn); } .stat-num.is-ok { color: var(--ok); }
+.stat-label { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+
+/* ---- 表格（风险台账等结构化列表）---- */
+.table-wrap { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.data th {
+  text-align: left; font-weight: 600; color: var(--text-faint); font-size: 12px;
+  letter-spacing: .06em;
+  padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+table.data td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.data tr:last-child td { border-bottom: 0; }
+table.data tbody tr:hover { background: rgba(176, 67, 46, .06); }
+table.data td.nowrap { white-space: nowrap; }
+
+
+/* ---- 表单 ---- */
+label { display: block; font-size: 12.5px; color: var(--text-sub); margin: 12px 0 5px; }
+input, textarea, select {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px;
+  font: inherit; font-size: 13.5px; color: var(--text); background: var(--card); outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(176, 67, 46, .15); }
+input::placeholder, textarea::placeholder { color: var(--text-faint); }
+textarea { resize: vertical; min-height: 96px; }
+/* 主按钮 = 墨色方角铅字块（弃 pill，拉开与 anthropic 的距离） */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--ink); cursor: pointer;
+  background: var(--ink); color: #FCFBF6; padding: 9px 19px; border-radius: 10px;
+  font: inherit; font-size: 13.5px; font-weight: 600; letter-spacing: .02em; transition: background .15s;
+}
+.btn:hover { background: var(--ink-hover); border-color: var(--ink-hover); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid #CDC7B2; }
+.btn-ghost:hover { background: rgba(35, 33, 28, .05); border-color: #A9A28C; }
+.linkish { background: none; border: 0; color: var(--primary); cursor: pointer; font: inherit; font-size: 13px; padding: 0; }
+.linkish:hover { text-decoration: underline; }
+.btn-row { display: flex; gap: 10px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+
+/* ---- 状态标记 ---- */
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.badge-primary { background: var(--primary-soft); color: var(--primary); }
+.badge-ok    { background: var(--ok-bg); color: var(--ok); }
+.badge-warn  { background: var(--warn-bg); color: var(--warn); }
+.badge-bad   { background: var(--bad-bg); color: var(--bad); }
+.badge-info  { background: var(--info-bg); color: var(--info); }
+.badge-gray  { background: rgba(35, 33, 28, .07); color: var(--text-sub); }
+.hint { font-size: 12px; color: var(--text-faint); }
+.empty { font-family: var(--font-kai); font-size: 13px; color: var(--text-faint); padding: 18px 0; text-align: center; }
+
+/* ---- 手写记号：朱笔圈阅（首页标题静态写死，子页由 common.js 往 [data-ring] 注入）----
+   圈阅 = 中式批阅动作，选定、圆满；多停靠 dashoffset 做出提笔-行笔-收笔的手写节奏 */
+.ringed { position: relative; display: inline-block; padding: 0 .1em; }
+.title-ring {
+  position: absolute; left: -6%; top: -14%; width: 112%; height: 126%;
+  overflow: visible; pointer-events: none;
+}
+.title-ring path {
+  fill: none; stroke: var(--primary); stroke-width: 4; stroke-linecap: round;
+  opacity: .82;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+  animation: ringDraw var(--ring-dur, 1.4s) ease-in-out var(--ring-delay, .15s) forwards;
+}
+@keyframes ringDraw {
+  0%   { stroke-dashoffset: 100; }   /* 落笔 */
+  26%  { stroke-dashoffset: 64; }    /* 上沿起速 */
+  54%  { stroke-dashoffset: 22; }    /* 行笔最快 */
+  82%  { stroke-dashoffset: 4; }     /* 收笔减速 */
+  100% { stroke-dashoffset: 0; }     /* 尾巴搭上起笔 */
+}
+
+/* 仪表细节：证据编号 C/E、置信度、榜单名次等「数字读数」一律等宽 */
+.evi-no, .clause-no, .conf-num, .rank-no, .hop-no, .steps li::before { font-family: var(--font-mono); }
+
+/* ---- 图谱节点类型三色（全站唯一出处；新中式哑色：墨绿/朱砂/黛青）---- */
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 2px 9px; border-radius: 999px; font-weight: 600; }
+.tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; }
+.tag-course  { background: rgba(62, 107, 79, .12);  color: #35593F; } .tag-course::before  { background: #3E6B4F; }
+.tag-contest { background: rgba(176, 67, 46, .11);  color: #9A3A25; } .tag-contest::before { background: #B0432E; }
+.tag-skill   { background: rgba(51, 88, 107, .12);  color: #2C4C5D; } .tag-skill::before   { background: #33586B; }
+
+/* ---- 列表条目 ---- */
+.item { padding: 13px 0; border-bottom: 1px solid var(--border); }
+.item:last-child { border-bottom: 0; padding-bottom: 0; }
+.item:first-child { padding-top: 0; }
+.item-title { font-weight: 600; color: var(--text); }
+.item-meta { font-size: 12px; color: var(--text-faint); margin-top: 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ---- 结果块 ---- */
+.callout { border-radius: 10px; padding: 13px 16px; font-size: 13.5px; margin-bottom: 12px; border: 1px solid; }
+.callout-ok   { background: var(--ok-bg);   border-color: rgba(62, 107, 79, .32);  color: #35593F; }
+.callout-warn { background: var(--warn-bg); border-color: rgba(168, 123, 47, .48); color: #7E5C10; }
+.callout-bad  { background: var(--bad-bg);  border-color: rgba(160, 44, 44, .32);  color: #8F2626; }
+.callout-info { background: var(--info-bg); border-color: rgba(51, 88, 107, .32);  color: #2C4C5D; }
+
+/* ---- 帖子卡片（论坛 / 我的发帖共用）---- */
+.post { padding: 15px 0; border-bottom: 1px solid var(--border); }
+.post:last-child { border-bottom: 0; padding-bottom: 0; }
+.post:first-child { padding-top: 0; }
+.post-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.post-title { font-size: 14.5px; font-weight: 700; color: var(--text); }
+.post-essence { background: rgba(168, 123, 47, .18); color: #7E5C10; border: 1px solid rgba(168, 123, 47, .5); }
+.post-body { font-size: 13px; color: var(--text-sub); margin: 6px 0 8px; }
+.post-foot { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-faint); flex-wrap: wrap; }
+.like-btn {
+  border: 1px solid var(--border); background: var(--card); color: var(--text-sub); cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 3px 11px; border-radius: 999px;
+  margin-left: auto; transition: border-color .15s, color .15s;
+}
+.like-btn:hover { border-color: var(--primary); color: var(--primary); }
+.like-btn:disabled { opacity: .6; cursor: default; }
+
+/* ---- 风险判定卡（安全雷达）---- */
+.verdict { border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; border: 1.5px solid; }
+.verdict-high_risk   { background: var(--bad-bg);  border-color: rgba(160, 44, 44, .38); }
+.verdict-medium_risk { background: var(--warn-bg); border-color: rgba(168, 123, 47, .5); }
+.verdict-low_risk    { background: var(--warn-bg); border-color: rgba(168, 123, 47, .5); }
+.verdict-likely_safe { background: var(--ok-bg);   border-color: rgba(62, 107, 79, .38); }
+.verdict-title { font-size: 17px; font-weight: 800; }
+.verdict-high_risk .verdict-title { color: var(--bad); }
+.verdict-medium_risk .verdict-title, .verdict-low_risk .verdict-title { color: var(--warn); }
+.verdict-likely_safe .verdict-title { color: var(--ok); }
+.score-bar { height: 8px; border-radius: 4px; background: #E9E4D3; margin: 14px auto 6px; max-width: 320px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.risk-item { border-left: 3px solid var(--bad); background: var(--bad-bg); border-radius: 0 10px 10px 0; padding: 11px 14px; margin-bottom: 10px; font-size: 13px; }
+.risk-type { font-weight: 700; color: var(--bad); }
+.risk-quote { color: var(--bad); font-weight: 600; text-decoration: underline dotted; }
+.risk-reason { color: var(--text-sub); font-size: 12.5px; }
+
+/* =====================================================================
+   动效层（全站共用）：入场、悬浮、按压、点赞弹跳、加载点
+   统一轻量克制——全部尊重系统「减少动态效果」设置
+   ===================================================================== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes popBeat {
+  0% { transform: scale(1); } 40% { transform: scale(1.22); }
+  70% { transform: scale(.94); } 100% { transform: scale(1); }
+}
+@keyframes blink {
+  0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; }
+}
+
+/* 卡片：悬浮时硬阴影朝反方向长一点 + 边框透一点朱砂，像把铅字拿起来 */
+.card { transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
+@media (hover: hover) {
+  .card:hover { box-shadow: 6px 6px 0 rgba(176, 67, 46, .12); transform: translate(-1px, -1px); border-color: #D4CEB8; }
+}
+
+/* 按钮 / chips / 导航：统一加个按压回弹 */
+.btn { transition: background .15s, transform .12s ease; }
+.btn:active { transform: translateY(1px) scale(.98); }
+.segmented button, .chip { transition: background .15s, color .15s, border-color .15s, transform .12s ease; }
+.chip:active, .segmented button:active { transform: scale(.94); }
+.nav a { transition: background .15s, color .15s; }
+.badge { transition: background .2s, color .2s; }
+
+/* 键盘可达性：Tab 聚焦给清晰描边 */
+.btn:focus-visible, .chip:focus-visible, .linkish:focus-visible,
+.tool-btn:focus-visible, .src-chip-btn:focus-visible, .like-btn:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+
+/* 列表条目入场：错峰上浮，最多错 8 档 */
+.item, .post, .callout, .verdict, .evi-item, .hop, .clause,
+.study-item, .plan-step, .path-step, .hb-row, .rank-item {
+  animation: fadeUp .28s ease both;
+}
+.item:nth-child(2), .post:nth-child(2), .evi-item:nth-child(2) { animation-delay: .03s; }
+.item:nth-child(3), .post:nth-child(3), .evi-item:nth-child(3) { animation-delay: .06s; }
+.item:nth-child(4), .post:nth-child(4) { animation-delay: .09s; }
+.item:nth-child(5), .post:nth-child(5) { animation-delay: .12s; }
+.item:nth-child(6), .post:nth-child(6) { animation-delay: .15s; }
+.item:nth-child(7), .post:nth-child(7) { animation-delay: .18s; }
+.item:nth-child(8), .post:nth-child(8) { animation-delay: .21s; }
+
+/* 点赞弹跳（JS 点赞成功后加 .pop） */
+.like-btn.pop { animation: popBeat .45s ease; }
+
+/* 加载点：替代干巴巴的「加载中…」纯文字 */
+.loading-dots { display: inline-flex; gap: 5px; align-items: center; padding: 14px 0; color: var(--text-faint); font-size: 12.5px; }
+.loading-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint); animation: blink 1.2s infinite; }
+.loading-dots i:nth-child(2) { animation-delay: .15s; }
+.loading-dots i:nth-child(3) { animation-delay: .3s; }
+
+/* 图片：悬浮微放大 */
+.feed-img, .thumb img { transition: transform .18s ease, box-shadow .18s ease; }
+.feed-img:hover { transform: scale(1.03); box-shadow: var(--shadow); }
+.thumb:hover img { transform: scale(1.08); }
+
+/* 系统开了「减少动态效果」就全关 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =====================================================================
+   手写层（圈阅 + 扫线）：低动效纯描边/静态底图，放在 kill-switch 之后
+   ===================================================================== */
+/* 补笔：主圈闭合后再描一小段收尾，像真人画圈的手感；时长跟随主圈变量 */
+.title-ring .tail {
+  stroke-width: 3.2; opacity: .6;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+  animation: ringDraw calc(var(--ring-dur, 1.4s) * .22) ease-out
+             calc(var(--ring-delay, .15s) + var(--ring-dur, 1.4s)) forwards;
+}
+
+/* 手绘风下划线：卡片标题底下一笔朱砂扫线（透明度压低不抢正文） */
+.card-title {
+  width: fit-content;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 10' preserveAspectRatio='none'%3E%3Cpath d='M2 7 C 40 4.5, 80 3, 120 4.5 C 160 6, 200 5.5, 238 4' fill='none' stroke='%23B0432E' stroke-width='2.4' stroke-linecap='round' opacity='.45'/%3E%3C/svg%3E") no-repeat left bottom / 100% 6px;
+  padding-bottom: 5px;
+}
+
+/* 小红书式荧光笔：重点来一笔——手绘不规则边缘 + 低不透明度，字仍清晰
+   注意 hero 的 .hl 是渐变字（background-clip:text），两套类名别混用 */
+mark.mk, .mk {
+  --mk-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 26' preserveAspectRatio='none'%3E%3Cpath d='M3 14 C 10 9, 34 7, 62 8 C 90 9, 112 8, 117 12 C 119 15, 118 18, 114 20 C 96 23, 56 24, 24 22 C 9 21, 2 19, 3 14 Z' fill='%23FFD84D' opacity='.62'/%3E%3C/svg%3E");
+  background: var(--mk-img) no-repeat center / 100% 100%;
+  color: inherit; padding: 1px .15em; margin: 0 -.06em;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.mk-green { --mk-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 26' preserveAspectRatio='none'%3E%3Cpath d='M3 14 C 10 9, 34 7, 62 8 C 90 9, 112 8, 117 12 C 119 15, 118 18, 114 20 C 96 23, 56 24, 24 22 C 9 21, 2 19, 3 14 Z' fill='%23A9DD8C' opacity='.6'/%3E%3C/svg%3E"); }
+.mk-pink  { --mk-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 26' preserveAspectRatio='none'%3E%3Cpath d='M3 14 C 10 9, 34 7, 62 8 C 90 9, 112 8, 117 12 C 119 15, 118 18, 114 20 C 96 23, 56 24, 24 22 C 9 21, 2 19, 3 14 Z' fill='%23FF9FB3' opacity='.58'/%3E%3C/svg%3E"); }
+
+/* 圈阅是纯描边、无位移缩放的低动效装饰——系统开了「减少动态效果」也保留
+   手写过程（这是全站的身份动作）；上面的全局开关继续压其余一切动画 */
+@media (prefers-reduced-motion: reduce) {
+  .title-ring path {
+    animation-duration: var(--ring-dur, 1.4s) !important;
+    animation-delay: var(--ring-delay, .15s) !important;
+    animation-iteration-count: 1 !important;
+  }
+  .title-ring .tail {
+    animation-duration: calc(var(--ring-dur, 1.4s) * .22) !important;
+    animation-delay: calc(var(--ring-delay, .15s) + var(--ring-dur, 1.4s)) !important;
+    animation-iteration-count: 1 !important;
+  }
+}

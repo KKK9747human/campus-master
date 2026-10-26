@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23B0432E'/%3E%3Crect x='8' y='8' width='84' height='84' rx='10' fill='none' stroke='%23FCFBF6' stroke-width='5' opacity='.8'/%3E%3Ctext x='50' y='72' font-size='56' text-anchor='middle' fill='%23FCFBF6' font-family='serif' font-weight='700'%3E%E6%8E%A7%3C/text%3E%3C/svg%3E">
+  <title>掌控校园 - 知识图谱与学习路径</title>
+  <link rel="stylesheet" href="common.css?v=12">
+  <script src="echarts.min.js"></script>
+  <style>
+    #chart { width: 100%; height: 660px; }
+    .legend { display: flex; gap: 14px; align-items: center; font-size: 12px; color: var(--text-sub); margin-bottom: 8px; flex-wrap: wrap; }
+    .graph-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .graph-toolbar input { max-width: 280px; }
+    .graph-toolbar .hint { margin-left: auto; }
+    .path-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+    .path-step:last-child { border-bottom: 0; }
+    .path-num { flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--ink); color: #FCFBF6; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+    .path-goal .path-num { background: var(--warn); }
+    .path-name { font-weight: 600; }
+    .path-desc { font-size: 12px; color: var(--text-sub); }
+    #path-box { margin-top: 14px; }
+    /* 节点详情卡：一行一条关系，行距拉开，节点名和关系说明别挤在一坨 */
+    .node-name { font-size: 16px; font-weight: 800; }
+    .node-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .rel-list { margin: 10px 0 0; padding: 0; list-style: none; }
+    .rel-list li { display: flex; gap: 7px; align-items: baseline; flex-wrap: wrap; font-size: 12.5px;
+      color: var(--text-sub); padding: 7px 0; border-bottom: 1px dashed var(--border); line-height: 1.6; }
+    .rel-list li:last-child { border-bottom: 0; }
+    .rel-arrow { flex: none; color: var(--text-faint); font-weight: 700; }
+    .study-item { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+    .study-item:last-child { border-bottom: 0; }
+    .study-item .who { font-weight: 700; }
+    .study-item .grow { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .plan-step { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px dashed var(--border); }
+    .plan-step:last-child { border-bottom: 0; }
+    /* 长节点名不许把右侧的周数徽章挤出去 */
+    .plan-main { flex: 1; min-width: 0; }
+    .plan-week { flex: none; min-width: 52px; padding: 3px 6px; border-radius: 8px; background: var(--primary-soft);
+      color: var(--primary); font-size: 11.5px; font-weight: 700; text-align: center; margin-top: 2px; }
+    .plan-week.is-goal { background: var(--bad-bg); color: var(--bad); }
+    .plan-reason { font-size: 12.5px; color: var(--text-sub); margin-top: 5px; line-height: 1.65; }
+    .plan-acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 7px; }
+  </style>
+  <script src="/web/common.js?v=12" defer></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-mark">控</span>掌控校园</a>
+      <nav class="nav">
+        <a href="/web/notice.html">情报官</a>
+        <a href="/web/kg_demo.html" class="active">知识图谱</a>
+        <a href="/web/forum.html">论坛</a>
+        <a href="/web/safety.html">安全雷达</a>
+        <a href="/web/profile.html">个人中心</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="page-head">
+      <h1 data-ring>课程 · 竞赛 · 经验 知识网络</h1>
+      <span class="page-sub">数据来自 MySQL kg_nodes / kg_edges · 搜一个概念，以它为中心<b class="mk mk-green">织出知识网格</b> · 圈层越近，关联越紧</span>
+      <div class="head-actions">
+        <a class="btn btn-ghost" href="/web/forum.html">发布经验帖进图谱</a>
+      </div>
+    </div>
+
+    <div class="main-side">
+      <div class="card">
+        <div class="graph-toolbar">
+          <input id="search" list="concept-list" placeholder="搜索一个概念，如：蓝桥杯 / React框架 / 数据结构">
+          <datalist id="concept-list"></datalist>
+          <button class="btn" onclick="doSearch()">构建网格</button>
+          <div class="segmented" id="depth-switch">
+            <button data-depth="1">一跳</button>
+            <button class="active" data-depth="2">两跳</button>
+          </div>
+          <button class="btn btn-ghost" id="btn-reset">↺ 自动中心</button>
+          <span class="hint" id="graph-hint">加载中…</span>
+        </div>
+        <div class="legend">
+          <span class="hint">热门概念：</span>
+          <span class="chips" id="hot-chips"></span>
+        </div>
+        <div class="legend">
+          <span class="tag tag-course">课程</span>
+          <span class="tag tag-contest">竞赛</span>
+          <span class="tag tag-skill">经验技能</span>
+          <span class="hint">｜<i style="display:inline-block;width:18px;height:2px;background:#6B6759;vertical-align:middle"></i> 实线=前置
+            <i style="display:inline-block;width:18px;height:2px;background:repeating-linear-gradient(90deg,#BDB8A6 0 4px,transparent 4px 7px);vertical-align:middle"></i> 虚线=相关
+            <i style="display:inline-block;width:18px;height:2px;background:#A87B2F;vertical-align:middle"></i> 金=包含</span>
+          <span style="margin-left:auto" class="hint">箭头 = 学习方向 · 悬停连线看关系名 · 点节点 = 以它为中心重建网格</span>
+        </div>
+        <div id="chart"></div>
+      </div>
+
+      <div class="stack">
+        <div class="card" id="node-card">
+          <h3 class="card-title">节点详情<span class="card-sub">点图上的圆点</span></h3>
+          <div id="node-body"></div>
+        </div>
+
+        <div class="card" id="study-card">
+          <h3 class="card-title">我的学习清单 · AI 规划<span class="card-sub">study_list + plan:{昵称}</span></h3>
+          <p class="hint" style="margin:0 0 8px">图上金边 = 已加进清单，绿边 = 已学完</p>
+          <div id="study-box"></div>
+          <div id="study-msg"></div>
+          <div id="plan-box"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">个性化学习路径<span class="card-sub">Redis 缓存 path:{身份}</span></h3>
+          <label>选择身份</label>
+          <select id="role">
+            <option value="freshman">大一新生 · 打基础</option>
+            <option value="contest">竞赛选手 · 冲蓝桥杯</option>
+            <option value="jobseeker">求职党 · 拿实习</option>
+            <option value="postgrad">考研党 · 进复试</option>
+          </select>
+          <div class="btn-row" style="margin-top:12px">
+            <button class="btn" onclick="loadPath()">生成专属路径</button>
+            <span class="badge badge-gray" id="path-badge" style="display:none"></span>
+          </div>
+          <div id="path-box"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">图谱概况<span class="card-sub">节点按类型、边按关系统计</span></h3>
+          <div class="stats" id="stats"></div>
+          <p class="hint" id="source-hint" style="margin-top:12px"></p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">这张图怎么读<span class="card-sub">给评委的三句话</span></h3>
+          <div class="stack" style="gap:9px">
+            <div class="callout callout-info" style="margin:0">经验帖 → 大模型抽三元组 → 合并进图谱，图是「长」出来的，不是画出来的。</div>
+            <div class="callout callout-info" style="margin:0">搜一个概念 = 网格以它为中心织开：内圈是直接相关，外圈是邻居的邻居，圈层就是关联距离。</div>
+            <div class="callout callout-info" style="margin:0">点任意节点立刻换中心重建网格；前置边的箭头就是学习方向。</div>
+            <div class="callout callout-info" style="margin:0">看中的概念顺手加进学习清单；清单交给 AI 沿前置边补齐依赖、排出周计划。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = location.origin.startsWith("http") ? "" : "http://127.0.0.1:8100";
+    const TYPE = {
+      course:  { label: "课程",     color: "#3E6B4F", cat: 0, size: 24 },
+      contest: { label: "竞赛",     color: "#B0432E", cat: 1, size: 30 },
+      skill:   { label: "经验技能", color: "#33586B", cat: 2, size: 27 },
+    };
+    const REL_COLOR = { prerequisite: "#6B6759", related: "#BDB8A6", contains: "#A87B2F" };
+    const REL_WORD = { prerequisite: "前置", related: "相关", contains: "包含" };
+    const STATUS_WORD = { todo: "待学", doing: "在学", done: "已学完" };
+    const INK = { text: "#23211C", sub: "#5D5A50", faint: "#908C7D", card: "#FCFBF6", border: "#E0DBCB", primary: "#B0432E" };
+    const chart = echarts.init(document.getElementById("chart"));
+    let centerName = "", depth = 2, raw = null, postTitle = null;
+    // selected = 详情卡显示谁；centerName = 网格中心（"" = 自动选连接数最高的概念）
+    let selected = "", planData = null;
+    // 昵称来自个人中心（localStorage），图谱要它才知道哪些节点已经在我的清单里
+    const nick = localStorage.getItem("cm_nickname") || "";
+    const esc = s => String(s ?? "").replace(/[&<>"']/g,
+      c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+    async function loadGraph() {
+      const q = nick ? "?nickname=" + encodeURIComponent(nick) : "";
+      raw = await (await fetch(API + "/kg/graph" + q)).json();
+      const names = raw.nodes.map(n => n.name);
+      if (!centerName || !names.includes(centerName)) centerName = autoCenter();
+      document.getElementById("search").value = centerName;
+      fillDatalist(names);
+      renderHotChips();
+      render();
+      renderStats(raw.nodes, raw.links);
+      if (selected) renderNodeCard();
+    }
+
+    function degrees() {
+      const deg = {};
+      raw.links.forEach(l => { deg[l.source] = (deg[l.source] || 0) + 1; deg[l.target] = (deg[l.target] || 0) + 1; });
+      raw.nodes.forEach(n => deg[n.name] ??= 0);
+      return deg;
+    }
+    const autoCenter = () => Object.entries(degrees()).sort((a, b) => b[1] - a[1])[0][0];
+
+    function fillDatalist(names) {
+      document.getElementById("concept-list").innerHTML =
+        names.map(n => `<option value="${esc(n)}">`).join("");
+    }
+
+    function renderHotChips() {
+      const deg = degrees();
+      const hot = Object.entries(deg).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      document.getElementById("hot-chips").innerHTML = hot.map(([n, d]) =>
+        `<button class="chip ${n === centerName ? "active" : ""}" data-node="${esc(n)}">${esc(n)} · ${d}</button>`).join("");
+    }
+
+    // 经验帖标题：详情卡要说清这个节点是从哪篇帖子长出来的
+    async function getPost(id) {
+      if (!id) return null;
+      if (!postTitle) {
+        try {
+          const d = await (await fetch(API + "/posts/latest?limit=50")).json();
+          postTitle = Object.fromEntries((d.data || []).map(p => [p.id, p]));
+        } catch (e) { postTitle = {}; }
+      }
+      return postTitle[id] || null;
+    }
+
+    // 以 center 为中心取知识网格：内圈 = 直接邻居（≤8），两跳模式外圈 = 邻居的邻居（≤12），
+    // 圈层即关联距离；节点太多时按连接数收敛，hint 里如实说
+    function gridScope(center) {
+      const adj = {};
+      raw.nodes.forEach(n => adj[n.name] = []);
+      raw.links.forEach(l => {
+        if (adj[l.source] && adj[l.target]) { adj[l.source].push(l.target); adj[l.target].push(l.source); }
+      });
+      const deg = degrees();
+      const degSort = (a, b) => (deg[b] || 0) - (deg[a] || 0) || a.localeCompare(b, "zh");
+      const one = [...new Set(adj[center])].sort(degSort);
+      const cut1 = Math.max(0, one.length - 8);
+      const ring1 = one.slice(0, 8);
+      let ring2 = [], cut2 = 0;
+      if (depth === 2) {
+        const seen = new Set([center, ...ring1]);
+        const two = [];
+        ring1.forEach(n => adj[n].forEach(m => { if (!seen.has(m)) { seen.add(m); two.push(m); } }));
+        two.sort(degSort);
+        cut2 = Math.max(0, two.length - 12);
+        ring2 = two.slice(0, 12);
+      }
+      return { ring1, ring2, cut1, cut2 };
+    }
+
+    // 网格坐标：中心 (0,0)，内圈/外圈各占一圈椭圆环位；角度均匀摊开、两节点/单节点用斜角兜底，
+    // 保证包围盒两个方向都有跨度。然后把包围盒比例归一到绘图区宽高比（ECharts 的 view 会把
+    // 内容包围盒「铺满」绘图区，横竖各自缩放——比例不一致就会把网格拉变形），再统一缩放，
+    // series.zoom = 内容宽/绘图宽 正好抵消铺满：设计像素 = 最终像素，任何节点数都不变形。
+    function gridLayout(center) {
+      const { ring1, ring2 } = gridScope(center);
+      chart.resize();   // 隐藏页签里 inline style 不落 computed，必须以 ECharts 认定的画布尺寸为准
+      const padX = 80, padTop = 50, padBottom = 70;
+      const plotW = Math.max(chart.getWidth() - padX * 2, 320);
+      const plotH = Math.max(chart.getHeight() - padTop - padBottom, 220);
+      const rx1 = plotW * 0.22, ry1 = plotH * 0.34, rx2 = plotW * 0.46, ry2 = plotH * 0.62;
+      const pos = {};
+      const put = (name, deg, rx, ry) => { pos[name] = [rx * Math.cos(deg), -ry * Math.sin(deg)]; };
+      const slots = (n, startDeg) => Array.from({ length: n }, (_, i) => (startDeg + i * 360 / n) * Math.PI / 180);
+      pos[center] = [0, 0];   // 中心节点占原点（bbox 的 concat([0]) 只算包围盒，不生成坐标项）
+
+      if (ring1.length === 1) put(ring1[0], Math.PI / 4, rx1, ry1);
+      else if (ring1.length === 2) { put(ring1[0], 3 * Math.PI / 4, rx1, ry1); put(ring1[1], -Math.PI / 4, rx1, ry1); }
+      else slots(ring1.length, Math.PI / 2).forEach((a, i) => put(ring1[i], a, rx1, ry1));
+      if (ring2.length === 1) put(ring2[0], Math.PI / 7, rx2, ry2);
+      else if (ring2.length === 2) { put(ring2[0], Math.PI / 4, rx2, ry2); put(ring2[1], -3 * Math.PI / 4, rx2, ry2); }
+      else slots(ring2.length, Math.PI / 2 + Math.PI / ring2.length).forEach((a, i) => put(ring2[i], a, rx2, ry2));
+
+      // 包围盒（含中心点）：ECharts 的 view 铺满是横竖独立缩放，只有内容包围盒比例 = 绘图区比例
+      // 铺满才是等比的。所以对坐标做各向异性映射，把包围盒强行整成绘图区比例、铺到 84%，
+      // 再令 series.zoom = W/plotW 抵消铺满 —— 净缩放恒为 1，任何节点数都不变形不放大。
+      // （只改 w/h 数值不动坐标是无效的——本页第一版就栽在这。）
+      const xs = Object.values(pos).map(p => p[0]);
+      const ys = Object.values(pos).map(p => p[1]);
+      const x1 = Math.min(...xs), x2 = Math.max(...xs), y1 = Math.min(...ys), y2 = Math.max(...ys);
+      const w0 = Math.max(x2 - x1, 1), h0 = Math.max(y2 - y1, 1);
+      const A = plotW / plotH;
+      const W = 0.84 * Math.min(plotW, plotH * A);   // 目标宽：两方向都装进 84%，比例锁 = 绘图区
+      const H = W / A;
+      const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+      const out = {};
+      Object.entries(pos).forEach(([name, [x, y]]) => {
+        out[name] = [(x - cx) * W / w0, (y - cy) * H / h0];
+      });
+      return { xy: out, zoom: +(W / plotW).toFixed(4) };
+    }
+
+    function render() {
+      const { ring1, ring2, cut1, cut2 } = gridScope(centerName);
+      const keep = new Set([centerName, ...ring1, ...ring2]);
+      const nodes = raw.nodes.filter(n => keep.has(n.name));
+      const links = raw.links.filter(l => keep.has(l.source) && keep.has(l.target));
+      const lay = gridLayout(centerName);
+
+      const data = nodes.map(n => {
+        const { id, ...rest } = n;                 // 必须剥掉数据库 id：ECharts 会优先按 id 解析边的端点
+        const t = TYPE[n.type] || TYPE.skill;
+        const isCenter = n.name === centerName;
+        const isInner = ring1.includes(n.name);
+        // 描边当第二层信息：金边=在清单里、绿边=已学完，中心节点用朱砂粗边+光晕
+        const ring = n.in_list ? (n.study_status === "done" ? "#3E6B4F" : "#A87B2F") : INK.border;
+        return {
+          ...rest, x: lay.xy[n.name][0], y: lay.xy[n.name][1],
+          symbolSize: isCenter ? t.size + 16 : (isInner ? t.size + 4 : t.size - 2), category: t.cat,
+          itemStyle: { color: t.color, borderColor: isCenter ? INK.primary : ring,
+            borderWidth: isCenter ? 3.5 : (n.in_list ? 3 : 1.6),
+            shadowBlur: isCenter ? 20 : 5, shadowColor: isCenter ? "rgba(176,67,46,.42)" : "rgba(35,33,28,.16)" },
+          label: { show: true, position: "bottom", fontSize: isCenter ? 12.5 : isInner ? 11 : 10.5,
+            color: isCenter ? INK.primary : isInner ? INK.text : INK.sub,
+            fontWeight: isCenter ? 800 : isInner ? 650 : 500, distance: 5 },
+        };
+      });
+      const lines = links.map(l => ({
+        ...l,
+        lineStyle: { color: REL_COLOR[l.relation] || "#BDB8A6",
+          width: l.relation === "prerequisite" ? 2 : 1.3,
+          type: l.relation === "related" ? "dashed" : "solid", opacity: 0.85 },
+        label: { show: false, fontSize: 10.5, color: INK.sub, backgroundColor: INK.card,
+          borderColor: INK.border, borderWidth: 1, padding: [1, 4], borderRadius: 3 },
+        emphasis: { label: { show: true, fontWeight: 700 } },
+      }));
+
+      // 必须先 clear 再 setOption：graph view 会沿用上一帧的取景变换，
+      // 换中心后新数据就被旧缩放顶出画布，同一个 option 重放多少次都纠正不了
+      chart.clear();
+      chart.setOption({
+        tooltip: {
+          confine: true, backgroundColor: INK.card, borderColor: INK.border,
+          textStyle: { color: INK.text },
+          formatter: p => p.dataType === "edge"
+            ? `${esc(p.data.source)} <b>—${esc(p.data.value)}→</b> ${esc(p.data.target)}`
+            // tooltip 容器默认 white-space:nowrap，长描述必须自己开 normal 才会折行，否则冲出白框
+            : `<div style="white-space:nowrap"><b>${esc(p.data.name)}</b>&nbsp;<span class="tag tag-${esc(p.data.type)}">${(TYPE[p.data.type] || TYPE.skill).label}</span></div><div style="max-width:300px;white-space:normal;line-height:1.65;font-size:12px;color:${INK.sub}">${esc(p.data.description || "")}</div>`
+        },
+        series: [{
+          type: "graph", layout: "none", roam: true, draggable: false,
+          zoom: lay.zoom,
+          // series 矩形必须 = gridLayout 里的留白假设（padX/padTop/padBottom），铺满倍率才对得上
+          left: 80, right: 80, top: 50, bottom: 70,
+          data, links: lines,
+          categories: [{ name: "课程" }, { name: "竞赛" }, { name: "经验技能" }],
+          labelLayout: { hideOverlap: true },
+          edgeSymbol: ["none", "arrow"], edgeSymbolSize: 7,
+          emphasis: { focus: "adjacency", lineStyle: { width: 2.5, color: INK.primary },
+            label: { show: true, fontSize: 11.5, fontWeight: 700 } },
+          blur: { itemStyle: { opacity: 0.25 }, label: { opacity: 0.2 }, lineStyle: { opacity: 0.12 } },
+        }],
+      }, { notMerge: true });
+
+      const trim = [`内圈 ${ring1.length} 个`, cut1 ? `（另有 ${cut1} 个直接相关未展开，按连接数收敛）` : "",
+        depth === 2 ? `外圈 ${ring2.length} 个${cut2 ? `（另有 ${cut2} 个未展开）` : ""}` : ""].filter(Boolean).join(" · ");
+      document.getElementById("graph-hint").textContent =
+        `「${centerName}」知识网格 · ${nodes.length} 个概念 / ${links.length} 条关系 · ${trim} · 点节点换中心`;
+      renderHotChips();
+
+      // chart.clear() 之后重新绑一次，保证点击一定生效（换中心全靠它）
+      chart.off("click");
+      chart.on("click", p => { if (p.dataType === "node") pickNode(p.data.name); });
+    }
+
+    /* ============ 搜索 / 换中心 / 节点详情 / 学习清单 ============ */
+    const nodeOf = name => raw && raw.nodes.find(n => n.name === name);
+
+    function doSearch() {
+      const q = document.getElementById("search").value.trim();
+      if (!q || !raw) return;
+      const names = raw.nodes.map(n => n.name);
+      const hit = names.find(n => n === q) || names.find(n => n.includes(q)) || names.find(n => q.includes(n));
+      if (!hit) {
+        document.getElementById("graph-hint").textContent =
+          `没找到「${q}」这个概念 —— 换个说法，或从热门概念里挑一个`;
+        return;
+      }
+      recenter(hit);
+    }
+    function recenter(name) {
+      centerName = name;
+      selected = name;
+      document.getElementById("search").value = name;
+      render();
+      renderNodeCard();
+    }
+    function pickNode(name) {                       // 点中心=只看详情；点其他=换中心重建网格
+      if (name === centerName) { selected = name; renderNodeCard(); return; }
+      recenter(name);
+    }
+    function jumpTo(name) {                         // 从关系行/计划 steps 跳过去：一定要换中心
+      recenter(name);
+      document.getElementById("node-card").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    async function renderNodeCard() {
+      const box = document.getElementById("node-body");
+      const n = nodeOf(selected);
+      if (!n) {
+        box.innerHTML = `<p class="empty" style="line-height:1.9">点击左侧网格里的任意节点<br>
+          这里给出它的说明、来源经验帖和全部关系；点非中心节点会以它为中心重建网格</p>`;
+        return;
+      }
+      const t = TYPE[n.type] || TYPE.skill;
+      const rels = raw.links.filter(l => l.source === n.name || l.target === n.name);
+      const lines = rels.map(l => {
+        const out = l.source === n.name;
+        const other = out ? l.target : l.source;
+        const word = REL_WORD[l.relation] || l.value;
+        const say = l.relation === "prerequisite"
+          ? (out ? `它是「${other}」的前置` : `要先啃完它`)
+          : l.relation === "contains"
+            ? (out ? `它属于这个大类` : `它包含下面这些`)
+            : `和它互相呼应`;
+        return `<li><span class="rel-arrow">${out ? "→" : "←"}</span>
+          <button class="linkish" data-act="jump" data-node="${esc(other)}">${esc(other)}</button>
+          <span class="hint">${esc(word)} · ${esc(say)}</span></li>`;
+      }).join("");
+      const post = await getPost(n.source_post_id);
+      const stage = `第 ${Number(n.layer) + 1} 学习阶段`;
+      box.innerHTML = `
+        <div class="node-head"><span class="node-name">${esc(n.name)}</span>
+          <span class="tag tag-${n.type}">${t.label}</span>
+          ${n.name === centerName ? '<span class="badge badge-primary">网格中心</span>' : ""}
+          ${n.in_list ? `<span class="badge ${n.study_status === "done" ? "badge-ok" : "badge-warn"}">${STATUS_WORD[n.study_status] || "待学"}</span>` : ""}
+        </div>
+        <p class="hint" style="margin:0 0 8px">${esc(stage)}${n.on_path ? " · 在个性化主线上" : ""} · 关联 ${rels.length} 个概念</p>
+        <p style="font-size:13px;line-height:1.75;margin:0 0 6px;color:var(--text-sub)">${esc(n.description) || "（这个节点还没有说明）"}</p>
+        ${post ? `<p class="hint" style="margin:0">来源经验帖：<a class="linkish" href="/web/forum.html" style="font-size:12px">${esc(post.title)}</a> · ${esc(post.author)} · ${post.likes} 赞</p>`
+               : n.source_post_id ? `<p class="hint" style="margin:0">来源经验帖 #${n.source_post_id}（列表里已经翻不到了）</p>`
+                                  : `<p class="hint" style="margin:0">来源：课程/竞赛基础数据，不是帖子抽出来的</p>`}
+        ${rels.length ? `<ul class="rel-list">${lines}</ul>` : `<p class="hint" style="margin:8px 0 0">它暂时还没有关系，是个孤岛节点。</p>`}
+        <div class="btn-row">
+          <button class="btn ${n.in_list ? "btn-ghost" : ""}" data-act="toggle" data-node="${esc(n.name)}">
+            ${n.in_list ? "✓ 已在清单 · 移出" : "➕ 加入我的学习清单"}</button>
+          ${n.name !== centerName ? `<button class="linkish" data-act="recenter" data-node="${esc(n.name)}">以它为中心重建网格</button>` : ""}
+        </div>`;
+    }
+
+    function setStudyMsg(text, isBad) {
+      document.getElementById("study-msg").innerHTML = text
+        ? `<div class="callout ${isBad ? "callout-bad" : "callout-warn"}" style="margin:12px 0 0">${esc(text)}</div>` : "";
+    }
+
+    async function apiPost(path, body) {
+      const res = await fetch(API + path, { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.detail || `接口 ${path} 返回 ${res.status}`);
+      return d;
+    }
+    const requireNick = () => {
+      if (nick) return true;
+      setStudyMsg("还没有昵称：先去个人中心填一个，清单和规划才知道排给谁", true);
+      return false;
+    };
+
+    async function toggleStudy(name) {
+      if (!requireNick()) return;
+      try { await apiPost("/study/toggle", { nickname: nick, node_name: name }); }
+      catch (e) { return setStudyMsg(e.message, true); }
+      setStudyMsg("");
+      await loadGraph();          // 圆点上的金边要立刻变
+      loadStudy(!!planData);      // 面板里正摊着计划的话，跟着清单一起重算（缓存已经作废了）
+    }
+
+    async function setStatus(name, status) {
+      if (!requireNick()) return;
+      try { await apiPost("/study/status", { nickname: nick, node_name: name, status }); }
+      catch (e) { return setStudyMsg(e.message, true); }
+      setStudyMsg("");
+      await loadGraph();
+      loadStudy(!!planData);      // 已经排过计划的话，点「学完」它自己往后收
+    }
+
+    async function loadStudy(showPlan) {
+      const box = document.getElementById("study-box");
+      if (!nick) {
+        box.innerHTML = `<div class="callout callout-warn" style="margin:0">
+          还没有昵称 — <a href="/web/profile.html" style="color:inherit;font-weight:700">去个人中心填一个</a>，
+          清单和 AI 规划才知道排给谁。</div>`;
+        document.getElementById("plan-box").innerHTML = "";
+        return;
+      }
+      let d;
+      try { d = await (await fetch(`${API}/study/list?nickname=${encodeURIComponent(nick)}`)).json(); }
+      catch (e) { box.innerHTML = `<p class="hint">清单接口没连通：${esc(e.message)}</p>`; return; }
+      const rows = d.data || [];
+      box.innerHTML = `
+        <div class="item-meta" style="margin:0 0 6px">当前昵称 <b style="color:var(--text)">${esc(nick)}</b>
+          · 清单 ${d.total} 项${d.stat.done ? ` · 已学完 ${d.stat.done}` : ""}${d.stat.doing ? ` · 在学 ${d.stat.doing}` : ""}</div>
+        ${rows.length ? rows.map(r => `
+          <div class="study-item">
+            <button class="linkish who" data-act="jump" data-node="${esc(r.node_name)}">${esc(r.node_name)}</button>
+            <span class="tag tag-${esc(r.node_type)}">${(TYPE[r.node_type] || TYPE.skill).label}</span>
+            <span class="badge ${r.status === "done" ? "badge-ok" : r.status === "doing" ? "badge-info" : "badge-gray"}">${STATUS_WORD[r.status]}</span>
+            <span class="grow">
+              ${r.status !== "done" ? `<button class="linkish" data-act="status" data-node="${esc(r.node_name)}" data-status="done">学完</button>`
+                                    : `<button class="linkish" data-act="status" data-node="${esc(r.node_name)}" data-status="todo">重学</button>`}
+              <button class="linkish" data-act="toggle" data-node="${esc(r.node_name)}">移出</button>
+            </span>
+          </div>`).join("")
+          : `<p class="empty" style="line-height:1.9">清单还是空的<br>去网格里点节点，详情卡里按「加入我的学习清单」</p>`}
+        ${rows.length ? `<div class="btn-row" style="margin-top:12px">
+            <button class="btn" data-act="plan">${planData ? "重新规划" : "✨ AI 生成学习规划"}</button>
+          </div>` : ""}`;
+      if (showPlan) loadPlan();
+    }
+
+    async function loadPlan() {
+      if (!requireNick()) return;
+      const box = document.getElementById("plan-box");
+      box.innerHTML = `<p class="hint" style="margin-top:12px">正在沿前置边补齐依赖并排周计划…</p>`;
+      const res = await fetch(`${API}/study/plan?nickname=${encodeURIComponent(nick)}`);
+      const d = await res.json();
+      if (!res.ok) {
+        planData = null;
+        box.innerHTML = `<div class="callout callout-warn" style="margin:12px 0 0">⚠️ ${esc(d.detail || "规划失败")}</div>`;
+        return;
+      }
+      planData = d;
+      const steps = d.steps.map(s => `
+        <div class="plan-step">
+          <div class="plan-week${s.type === "contest" ? " is-goal" : ""}">第 ${s.week} 周</div>
+          <div class="plan-main">
+            <div class="item-title" style="font-size:13.5px">${esc(s.name)}
+              <span class="tag tag-${esc(s.type)}">${(TYPE[s.type] || TYPE.skill).label}</span>
+              ${s.in_list ? '<span class="badge badge-primary">自己加的</span>' : '<span class="badge badge-gray">AI 补齐</span>'}
+              ${s.status === "doing" ? '<span class="badge badge-info">在学</span>' : ""}
+            </div>
+            <div class="plan-reason">${esc(s.reason)}</div>
+            ${s.prereq.length ? `<div class="hint" style="margin-top:4px">前置：${s.prereq.map(esc).join("、")}</div>` : ""}
+            <div class="plan-acts">
+              <button class="linkish" data-act="status" data-node="${esc(s.name)}" data-status="done">✓ 学完了</button>
+              <button class="linkish" data-act="status" data-node="${esc(s.name)}" data-status="doing">在学</button>
+              <button class="linkish" data-act="jump" data-node="${esc(s.name)}">图上看看</button>
+            </div>
+          </div>
+        </div>`).join("");
+      box.innerHTML = `
+        <div class="item-meta" style="margin:14px 0 6px">
+          <span class="badge ${d.engine === "llm" ? "badge-ok" : "badge-warn"}">${d.engine === "llm" ? "大模型写的理由" : "本地规则引擎代写"}</span>
+          <span class="badge ${d.from_cache ? "badge-info" : "badge-gray"}">${d.from_cache ? "Redis 缓存命中" : "刚算的 · 已存 Redis 10 分钟"}${d.cache ? " · " + d.cache.ms + "ms" : ""}</span>
+          <span>${esc(d.role_label)} · ${d.steps.length} 步 / 约 ${d.total_weeks} 周</span>
+        </div>
+        ${d.advice ? `<div class="callout callout-info" style="margin:0 0 6px">${esc(d.advice)}</div>` : ""}
+        ${d.done.length ? `<p class="hint" style="margin:0 0 4px">已学完、不再占排期：${d.done.map(x => esc(x.name)).join("、")}</p>` : ""}
+        ${d.orphans.length ? `<p class="hint" style="margin:0 0 4px;color:var(--warn)">清单里有 ${d.orphans.length} 项已不在图谱：${d.orphans.map(esc).join("、")}</p>` : ""}
+        ${steps}`;
+    }
+
+    function renderStats(nodes, links) {
+      const cnt = t => nodes.filter(n => n.type === t).length;
+      const rel = r => links.filter(l => l.relation === r).length;
+      document.getElementById("stats").innerHTML = `
+        <div class="stat"><div class="stat-num">${nodes.length}</div><div class="stat-label">节点总数</div></div>
+        <div class="stat"><div class="stat-num">${cnt("course")}</div><div class="stat-label">课程</div></div>
+        <div class="stat"><div class="stat-num">${cnt("contest")}</div><div class="stat-label">竞赛</div></div>
+        <div class="stat"><div class="stat-num">${cnt("skill")}</div><div class="stat-label">经验技能</div></div>
+        <div class="stat"><div class="stat-num">${rel("prerequisite")}</div><div class="stat-label">前置关系</div></div>
+        <div class="stat"><div class="stat-num">${rel("related") + rel("contains")}</div><div class="stat-label">相关 / 包含</div></div>`;
+      const src = nodes.filter(n => n.source_post_id).length;
+      document.getElementById("source-hint").textContent =
+        `其中 ${src} 个节点由经验帖抽取产生，其余为演示数据；每张图都随发帖实时长大。`;
+    }
+
+    async function loadPath() {
+      const r = document.getElementById("role").value;
+      const res = await fetch(`${API}/kg/path/${r}`);
+      const d = await res.json();
+      const box = document.getElementById("path-box");
+      const badge = document.getElementById("path-badge");
+      if (!res.ok) { box.innerHTML = `<p class="hint">⚠️ ${esc(d.detail)}</p>`; badge.style.display = "none"; return; }
+      badge.style.display = "";
+      badge.textContent = (d.from_cache ? "Redis 缓存命中" : "已计算并存入 Redis") + (d.cache ? " · " + d.cache.ms + "ms" : "");
+      badge.className = "badge " + (d.from_cache ? "badge-ok" : "badge-warn");
+      box.innerHTML = d.data.path.map(s => {
+        const isGoal = s.name === d.data.goal;
+        return `<div class="path-step${isGoal ? " path-goal" : ""}">
+          <div class="path-num">${isGoal ? "🎯" : s.order}</div>
+          <div><div class="path-name">${esc(s.name)} <span class="tag tag-${esc(s.type)}">${(TYPE[s.type] || TYPE.skill).label}</span></div>
+          <div class="path-desc">${esc(s.description || "")}</div></div></div>`;
+      }).join("") + (d.data.extras?.length
+        ? `<p class="hint" style="margin-top:10px">支线可选：${d.data.extras.map(x => esc(x.name)).join("、")}</p>` : "");
+    }
+
+    document.getElementById("depth-switch").addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      depth = +b.dataset.depth;
+      document.querySelectorAll("#depth-switch button").forEach(x => x.classList.toggle("active", x === b));
+      if (raw) render();
+    });
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      if (!raw) return;
+      recenter(autoCenter());
+    });
+    document.getElementById("hot-chips").addEventListener("click", e => {
+      const b = e.target.closest(".chip"); if (!b) return;
+      recenter(b.dataset.node);
+    });
+    document.getElementById("search").addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
+
+    // 详情卡和清单面板的按钮全走事件委托：节点名是帖子抽出来的字符串，
+    // 拼进 onclick="" 里迟早被一个引号弄坏，不如统一放 data-node
+    function bindActs(el) {
+      el.addEventListener("click", e => {
+        const b = e.target.closest("[data-act]"); if (!b) return;
+        const { act, node: name, status } = b.dataset;
+        if (act === "toggle") toggleStudy(name);
+        else if (act === "status") setStatus(name, status);
+        else if (act === "plan") loadPlan();
+        else if (act === "jump") jumpTo(name);
+        else if (act === "recenter") recenter(name);
+      });
+    }
+    bindActs(document.getElementById("node-body"));
+    bindActs(document.getElementById("study-card"));
+
+    // 窗口变宽/变窄后重算：网格坐标本来就按容器尺寸算
+    let resizeTimer = 0;
+    window.addEventListener("resize", () => {
+      chart.resize();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { if (raw) render(); }, 400);
+    });
+
+    // 情报官简报/通知里点了关联概念，带 ?focus=概念 进来直接织它的网格
+    const focusParam = new URLSearchParams(location.search).get("focus");
+    if (focusParam) centerName = focusParam;
+
+    loadGraph(); loadPath(); renderNodeCard(); loadStudy();
+  </script>
+</body>
+</html>

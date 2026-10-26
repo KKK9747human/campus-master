@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>掌控校园 - ECharts 图谱入门 Demo</title>
+  <!-- ECharts 已下载到本地（web/echarts.min.js）：断网/内网环境也能演示
+       若在能联网的环境也可换成 CDN:
+        https://registry.npmmirror.com/echarts/5.5.0/files/dist/echarts.min.js -->
+  <script src="echarts.min.js"></script>
+  <style>
+    /* 让图表容器有明确的宽高，否则 ECharts 画不出来 */
+    #chart { width: 900px; height: 600px; border: 1px dashed #aaa; margin: 40px auto; }
+  </style>
+</head>
+<body>
+  <h2 style="text-align: center">知识图谱 Demo：一个圆圈连着另一个圆圈</h2>
+
+  <!-- 图表将渲染在这个 div 里 -->
+  <div id="chart"></div>
+
+  <script>
+    // 1. 找到页面容器，初始化一个 ECharts 图表实例
+    const myChart = echarts.init(document.getElementById('chart'));
+
+    // 2. 准备数据：节点(圆圈) + 连线(边) —— 与数据库 kg_nodes / kg_edges 一一对应
+    const nodes = [
+      { name: 'C语言',      symbolSize: 70 },
+      { name: '蓝桥杯',    symbolSize: 70 },
+      { name: 'Python基础', symbolSize: 70 },
+      { name: '数据分析',   symbolSize: 70 },
+    ];
+    const links = [
+      { source: 'C语言',      target: '蓝桥杯',   value: '前置' },
+      { source: 'Python基础', target: '数据分析', value: '前置' },
+      { source: 'C语言',      target: 'Python基础', value: '相关' },
+    ];
+
+    // 3. 编写配置项 option —— ECharts 的一切都靠这个对象驱动
+    const option = {
+      tooltip: {
+        // 鼠标悬停时显示详情（后续接入后端后，这里会展示数据库里的 description）
+        formatter: function (params) {
+          if (params.dataType === 'edge') {
+            return '关系：' + params.data.value;   // 悬停在连线上
+          }
+          return '节点：' + params.name;           // 悬停在圆圈上
+        }
+      },
+      series: [{
+        type: 'graph',          // 图表类型：关系图（就是我们要的知识图谱）
+        layout: 'force',        // 布局：力引导 —— 节点像带斥力的小球，自动散开并保持平衡
+        force: {
+          repulsion: 800,       // 斥力：数值越大，圆圈之间推得越开
+          edgeLength: 150       // 连线的理想长度（像素）
+        },
+        symbolSize: 60,         // 圆圈默认大小（节点里可单独覆盖）
+        roam: true,             // 允许鼠标拖拽画布、滚轮缩放
+        label: { show: true },  // 在圆圈上显示节点名字
+        edgeSymbol: ['none', 'arrow'],          // 连线两端样式：终点带箭头，表示"指向"
+        edgeLabel: {
+          show: true,
+          formatter: function (params) { return params.data.value; }  // 连线上显示"前置/相关"
+        },
+        data: nodes,            // 节点数据 → 对应 kg_nodes 表
+        links: links,           // 连线数据 → 对应 kg_edges 表
+      }]
+    };
+
+    // 4. 把配置交给图表实例，渲染！
+    myChart.setOption(option);
+  </script>
+</body>
+</html>

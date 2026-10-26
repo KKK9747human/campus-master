@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23B0432E'/%3E%3Crect x='8' y='8' width='84' height='84' rx='10' fill='none' stroke='%23FCFBF6' stroke-width='5' opacity='.8'/%3E%3Ctext x='50' y='72' font-size='56' text-anchor='middle' fill='%23FCFBF6' font-family='serif' font-weight='700'%3E%E6%8E%A7%3C/text%3E%3C/svg%3E">
+  <title>掌控校园 - 安全雷达</title>
+  <link rel="stylesheet" href="common.css?v=12">
+  <style>
+    .feature-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .feature-list span { font-size: 12px; color: var(--text-sub); background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px; }
+    #ledger tr.is-safe td { color: var(--text-faint); }
+    .lv { font-weight: 700; }
+    .lv-high_risk { color: var(--bad); } .lv-medium_risk, .lv-low_risk { color: var(--warn); } .lv-likely_safe { color: var(--ok); }
+
+    /* 结论 → 证据 → 推理链 → 条款依据：四段之间留足呼吸，别又挤成一坨 */
+    .verdict-line { font-size: 14.5px; font-weight: 650; line-height: 1.7; margin-top: 12px; }
+    .block { margin-top: 20px; }
+    .block-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+    .block-title small { font-weight: 400; color: var(--text-faint); margin-left: 6px; }
+    .evi-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px dashed var(--border); }
+    .evi-item:last-child { border-bottom: 0; }
+    .evi-no { flex: none; width: 30px; height: 22px; border-radius: 5px; background: var(--ink); color: #FCFBF6;
+      font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+    .evi-type { font-weight: 650; }
+    .evi-basis { font-size: 11.5px; color: var(--primary); font-weight: 600; margin-left: 8px; }
+    .evi-basis.is-none { color: var(--text-faint); font-weight: 400; }
+    .evi-quote { font-size: 12.5px; color: var(--text-sub); margin-top: 6px; line-height: 1.7; }
+    .evi-reason { font-size: 12px; color: var(--text-faint); margin-top: 4px; line-height: 1.7; }
+    .hop { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: var(--card-2); }
+    .hop-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .hop-no { font-size: 11px; color: var(--text-faint); letter-spacing: .5px; }
+    .hop-name { font-weight: 700; font-size: 13px; }
+    .hop-sum { font-size: 12.5px; color: var(--text-sub); margin-top: 8px; line-height: 1.7; }
+    .hop-items { margin: 8px 0 0 0; padding-left: 18px; font-size: 12px; color: var(--text-sub); line-height: 1.85; }
+    .hop-items li { margin-bottom: 3px; word-break: break-all; }
+    .hop-items li:empty { display: none; }
+    .clause { border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 9px;
+      padding: 13px 15px; margin-bottom: 12px; }
+    .clause-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .clause-no { background: var(--ink); color: #FCFBF6; font-size: 11.5px; font-weight: 700;
+      border-radius: 5px; padding: 2px 7px; }
+    .clause-doc { font-weight: 700; font-size: 13px; }
+    .clause-art { font-weight: 650; font-size: 12.5px; color: var(--primary); }
+    .clause-trust { margin-left: auto; font-size: 11.5px; color: var(--text-faint); }
+    .clause-title { font-size: 12px; color: var(--text-sub); margin-top: 7px; }
+    .clause-text { margin: 9px 0 0; padding: 10px 12px; background: var(--bg); border-radius: 7px;
+      font-size: 12.5px; line-height: 1.85; color: var(--text); }
+    .clause-foot { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 9px; font-size: 11.5px; color: var(--text-faint); }
+    .clause-foot a { color: var(--primary); text-decoration: none; }
+    .conf { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px;
+      padding: 11px 14px; border: 1px dashed var(--border); border-radius: 9px; }
+    .conf-num { font-size: 22px; font-weight: 700; color: var(--primary); }
+    .conf-why { font-size: 11.5px; color: var(--text-sub); line-height: 1.8; }
+    .hb-row { display: flex; gap: 10px; align-items: baseline; padding: 9px 0; border-bottom: 1px dashed var(--border); flex-wrap: wrap; }
+    .hb-row:last-child { border-bottom: 0; }
+    .hb-doc { font-weight: 650; font-size: 12.5px; }
+    .hb-art { color: var(--primary); font-size: 12px; font-weight: 600; }
+    .hb-text { flex: 1 1 100%; font-size: 12px; color: var(--text-sub); line-height: 1.75; margin-top: 2px; }
+    .is-off { opacity: .55; }
+  </style>
+  <script src="/web/common.js?v=12" defer></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-mark">控</span>掌控校园</a>
+      <nav class="nav">
+        <a href="/web/notice.html">情报官</a>
+        <a href="/web/kg_demo.html">知识图谱</a>
+        <a href="/web/forum.html">论坛</a>
+        <a href="/web/safety.html" class="active">安全雷达</a>
+        <a href="/web/profile.html">个人中心</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="page-head">
+      <h1 data-ring>安全雷达</h1>
+      <span class="page-sub">求职鉴坑 · 聊天鉴诈 · 通知排查，<b class="mk mk-pink">三类风险一处拦截</b>，每次扫描进台账</span>
+      <div class="head-actions">
+        <span class="badge badge-gray" id="who-badge"></span>
+        <a class="btn btn-ghost" href="/web/profile.html">完善个人信息</a>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h3 class="card-title">送检内容<span class="card-sub" id="scene-sub">场景自动判定，也可手动指定</span></h3>
+        <div class="segmented" id="scene-switch">
+          <button class="active" data-scene="auto">自动判定</button>
+          <button data-scene="job">求职鉴坑</button>
+          <button data-scene="fraud">聊天鉴诈</button>
+          <button data-scene="notice">通知排查</button>
+        </div>
+        <div style="margin-top:14px">
+          <div class="hint" style="margin-bottom:8px">检测技能（从条款库 risk_type 标签提炼）：
+            选一个 = 第三跳只在该技能的依据池里检索条款，引用必有出处；不选 = 全库检索</div>
+          <div class="chips" id="skill-chips"></div>
+          <div class="hint" id="skill-desc" style="margin-top:8px"></div>
+        </div>
+        <textarea id="text" style="min-height:300px;margin-top:14px" placeholder="把 HR 聊天记录、可疑短信、群里转发的通知整段粘进来……"></textarea>
+        <div class="btn-row">
+          <button class="btn" id="btn-check" onclick="scan()">开始鉴雷</button>
+          <button class="linkish" onclick="fillSample()">换一个样例</button>
+          <button class="linkish" onclick="clearText()">清空</button>
+        </div>
+        <div class="feature-list" id="features"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">风控拦截结果<span class="card-sub">逐条给出原文证据，不做无凭据的结论</span></h3>
+        <div id="out"><div class="empty">分析后这里展示风险等级、评分、原文证据和行动建议</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h3 class="card-title">风险台账<span class="card-sub">MySQL risk_logs · 谁在什么时候扫过什么、判成什么等级</span></h3>
+      <div class="btn-row" style="margin-top:0;margin-bottom:14px">
+        <div class="chips" id="log-filter">
+          <button class="chip active" data-scene="">全部</button>
+          <button class="chip" data-scene="job">求职</button>
+          <button class="chip" data-scene="fraud">鉴诈</button>
+          <button class="chip" data-scene="notice">通知</button>
+        </div>
+        <button class="btn btn-ghost" style="margin-left:auto" onclick="loadLogs()">刷新</button>
+      </div>
+      <div class="stats" id="stats" style="margin-bottom:16px"></div>
+      <div class="table-wrap">
+        <table class="data" id="ledger">
+          <thead>
+            <tr><th>时间</th><th>场景</th><th>提交人</th><th>送检内容摘要</th><th>命中特征</th><th>等级</th><th>评分</th><th>引擎</th><th>引用条款</th></tr>
+          </thead>
+          <tbody><tr><td colspan="9"><div class="empty">还没有扫描记录</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3 class="card-title">雷达引用的条款库<span class="card-sub" id="hb-sub">MySQL handbook_articles</span></h3>
+      <div class="btn-row" style="margin-top:0;margin-bottom:12px">
+        <div class="chips" id="hb-filter">
+          <button class="chip active" data-scene="">全部</button>
+          <button class="chip" data-scene="job">求职</button>
+          <button class="chip" data-scene="fraud">鉴诈</button>
+          <button class="chip" data-scene="notice">通知</button>
+          <button class="chip" data-scene="all">通用</button>
+        </div>
+        <input id="hb-q" placeholder="按关键词/文件名筛，如 押金" style="margin-left:auto;max-width:220px">
+        <button class="btn btn-ghost" onclick="loadHandbook()">查询</button>
+      </div>
+      <div class="hint" id="hb-stats" style="margin-bottom:10px"></div>
+      <div id="hb-list"><div class="loading-dots"><i></i><i></i><i></i> 加载中…</div></div>
+      <p class="hint" style="margin-top:12px">灰色条目是「还没逐字核对上官方原文」的条款，一律不参与判词引用；
+        本校《学生手册》用 <code>python tools_handbook_import.py --file 你的条款.json</code> 导进来，人工复核后置 verified=1 才生效。</p>
+    </div>
+  </div>
+
+  <script>
+    const API = location.origin.startsWith("http") ? "" : "http://127.0.0.1:8100";
+    const LEVEL = {
+      high_risk:   { t: "高危预警 · 疑似诈骗，立即停止", c: "var(--bad)" },
+      medium_risk: { t: "中危 · 存在可疑特征，谨慎", c: "var(--warn)" },
+      low_risk:    { t: "低危 · 有轻微可疑点，留意核实", c: "var(--warn)" },
+      likely_safe: { t: "未发现明显诈骗特征", c: "var(--ok)" },
+    };
+    const SCENE_TEXT = {
+      job:    { sub: "招聘 / 兼职 / 实习 HR 对话，重点看收费、扣证、无合同", ph: "把 HR 的聊天记录整段粘进来，例：日薪300，入职前先交200押金……", feats: ["押金保证金", "收费培训", "扣证件", "不签合同", "刷单垫付", "贷款传销", "收费内推", "超长试用", "薪酬反常"] },
+      fraud:  { sub: "私聊 / 短信 / 电话话术，重点看验证码、转账、紧急感", ph: "把可疑私聊或短信整段粘进来，例：我是辅导员，把验证码发我，助学金马上截止……", feats: ["索要验证码", "假冒师生收费", "私下转账", "校园贷裸贷", "中奖退税", "刷单返利", "荐股投资", "引导换 App", "制造紧急感", "钓鱼链接"] },
+      notice: { sub: "群里转发的通知 / 公告，重点看非学校域名与收费要求", ph: "把群通知原文粘进来，例：【教务处】请登录 xxx.vip 填写银行卡领取退税……", feats: ["非 .edu.cn 链接", "填写银行卡", "缴费报名", "点击领取", "限时施压", "代填验证码"] },
+      auto:   { sub: "场景自动判定，也可手动指定", ph: "把 HR 聊天记录、可疑短信、群里转发的通知整段粘进来……", feats: ["押金保证金", "收费培训", "扣证件", "不签合同", "索要验证码", "私下转账", "校园贷", "刷单返利", "钓鱼链接", "限时施压"] },
+    };
+    const SAMPLES = [
+      "HR同学你好~ 我们这个线上运营兼职日薪300，轻松月入过万！\n入职前需要交200元押金作为服装费，做完第一周就全额退。\n不用签合同的，我们这边都是口头约定，先把身份证原件发我登记一下。\n另外要先参加3天培训，培训费199，交完安排上岗。",
+      "同学在吗？我是你辅导员李老师，学校这边给你留了个岗位，急用你帮我个忙。\n我这边银行卡被限额了，你先帮我垫付一下这笔保证金，明天财务报销了立刻还你。\n这是申请链接 http://cm-gongzi.top/form，把你的学号和短信验证码一起填进去。",
+      "【教务处通知】2026 年奖学金退税补贴开始发放，请所有获奖同学 24 小时内点击\nhttp://ehall-jsxx.vip/tax 填写银行卡与身份证信息，逾期视为自动放弃。\n客服微信 jxs-support，把验证码截图发我即可加急办理，别告诉其他同学。",
+      "同学你好，我们社团招新，周末在操场摆摊，有兴趣可以直接过来聊聊。\n没有任何费用，也不用交材料，来的时候带学生证看一下就行。\n要是想参加，我这周把排班表发你，你自己挑时间。",
+      // 帮信罪：学生最容易「顺手赚一笔」踩进去的坑，条款库里反电诈法第三十一条 + 校规第五十二条正好成对
+      "兄弟，把你的银行卡和手机卡借我走几天流水，一天给你 150 报酬，\n就过一下账，钱到你卡上我取出来，跟你没关系的事。\n要是微信账号也能借两天，一个号再加 200，别跟别人讲啊。",
+    ];
+    let scene = "auto", sampleIdx = 0;
+
+    // 检测技能：列表由后端从条款库实时提炼（GET /safety/skills），前端只负责选与展示
+    let skillId = "", skills = [], skillTotal = 0;
+    async function loadSkills() {
+      const box = document.getElementById("skill-chips");
+      try {
+        const d = await (await fetch(API + "/safety/skills")).json();
+        skills = d.data || []; skillTotal = d.total_clauses;
+      } catch {
+        box.innerHTML = '<span class="hint">技能列表加载失败，仍可按全条款库扫描</span>'; return;
+      }
+      box.innerHTML =
+        `<button class="chip ${skillId ? "" : "active"}" data-skill="">全条款库 · ${skillTotal} 条</button>` +
+        skills.map(s => `<button class="chip ${skillId === s.id ? "active" : ""}" data-skill="${esc(s.id)}"
+          title="${esc(s.docs.join("；"))}">${esc(s.name)} · ${s.pool}条</button>`).join("");
+    }
+    function showSkillDesc() {
+      const el = document.getElementById("skill-desc");
+      const s = skills.find(k => k.id === skillId);
+      if (!s) { el.textContent = ""; return; }
+      el.innerHTML = `已选 <b>${esc(s.name)}</b>（${esc(s.scene_label)}）· 依据池 ${s.pool} 条，核心 ${s.core} 条
+        · 平均可信度 ${s.avg_trust} · 出处：${s.sources.map(x => esc(x.label) + "×" + x.n).join("、")}
+        · 依据文件：${s.docs.map(esc).join("；")}`;
+    }
+    document.getElementById("skill-chips").addEventListener("click", e => {
+      const b = e.target.closest(".chip"); if (!b) return;
+      skillId = b.dataset.skill;
+      document.querySelectorAll("#skill-chips .chip").forEach(x => x.classList.toggle("active", x === b));
+      showSkillDesc();
+    });
+
+    function applyScene() {
+      const cfg = SCENE_TEXT[scene];
+      document.getElementById("scene-sub").textContent = cfg.sub;
+      document.getElementById("text").placeholder = cfg.ph;
+      document.getElementById("features").innerHTML = cfg.feats.map(f => `<span>${f}</span>`).join("");
+    }
+
+    document.getElementById("scene-switch").addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      scene = b.dataset.scene;
+      document.querySelectorAll("#scene-switch button").forEach(x => x.classList.toggle("active", x === b));
+      applyScene();
+    });
+
+    function fillSample() {
+      document.getElementById("text").value = SAMPLES[sampleIdx % SAMPLES.length];
+      sampleIdx++;
+    }
+    function clearText() {
+      document.getElementById("text").value = "";
+      document.getElementById("out").innerHTML = '<div class="empty">分析后这里展示风险等级、评分、原文证据和行动建议</div>';
+    }
+
+    async function scan() {
+      const text = document.getElementById("text").value.trim();
+      if (text.length < 10) return alert("送检内容至少 10 个字");
+      const btn = document.getElementById("btn-check");
+      const out = document.getElementById("out");
+      btn.disabled = true; btn.textContent = "雷达扫描中…";
+      try {
+        const res = await fetch(API + "/safety/scan", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, scene, skill: skillId, nickname: localStorage.getItem("cm_nickname") || "" }),
+        });
+        const d = await res.json();
+        if (!res.ok) { out.innerHTML = `<div class="empty">⚠️ ${esc(d.detail || res.status)}</div>`; return; }
+        const L = LEVEL[d.level] || { t: d.level, c: "var(--text)" };
+        const basisOf = (d.missing_basis || []).map(m => m.risk_index);
+        const conf = d.confidence || {};
+        out.innerHTML = `
+          <div class="verdict verdict-${d.level}">
+            <div class="verdict-title">${L.t}</div>
+            <div class="score-bar"><div class="score-fill" style="width:${d.score}%;background:${L.c}"></div></div>
+            <div class="verdict-line">${esc(d.verdict)}</div>
+            <div class="hint" style="margin-top:10px">
+              <span class="badge badge-primary">${d.scene_label}</span>
+              ${d.skill ? `<span class="badge badge-info">技能·${esc(d.skill.name)} · 依据池 ${d.skill.pool} 条</span>` : ""}
+              欺诈可能性 ${d.score}/100
+              · ${d.engine === "llm" ? "大模型判级" : "本地规则引擎判级"}
+              · ${d.chain?.[3]?.engine === "llm" ? "大模型写链路" : "本地规则引擎写链路"}
+              · 已记入台账 #${d.log_id}
+            </div>
+            ${conf.value === null ? "" : `
+              <div class="conf">
+                <div><div class="hint">依据置信度</div><div class="conf-num">${conf.value}</div></div>
+                <div class="conf-why">${(conf.why || []).map(w => `· ${w}`).join("<br>")}</div>
+              </div>`}
+            ${(d.degraded_to || []).length ? `<div class="hint" style="margin-top:9px">已降级：${d.degraded_to.join("、")}由本地规则引擎完成（未配置 MaaS Key）</div>` : ""}
+          </div>
+
+          <div class="block">
+            <div class="block-title">编号证据<small>${d.coverage.with_basis}/${d.coverage.total} 条有可引用依据</small></div>
+            ${(d.risks || []).length ? d.risks.map(r => `
+              <div class="evi-item">
+                <div class="evi-no">E${r.no}</div>
+                <div>
+                  <div class="evi-type">${esc(r.type)}
+                    ${(r.basis || []).length
+                      ? `<span class="evi-basis">依据 ${(r.basis || []).map(n => "C" + n).join(" · ")}</span>`
+                      : `<span class="evi-basis is-none">条款库未覆盖</span>`}
+                  </div>
+                  <div class="evi-quote">原文证据「${esc(r.quote)}」</div>
+                  <div class="evi-reason">${esc(r.reason || "")}</div>
+                </div>
+              </div>`).join("") : '<div class="empty">没抠出可指认的特征——这不等于内容安全，换个说法可能就不同</div>'}
+          </div>
+
+          <div class="block">
+            <div class="block-title">推理链<small>每一跳的引擎都标出来，结论不是黑盒</small></div>
+            ${(d.chain || []).map(h => `
+              <div class="hop">
+                <div class="hop-head"><span class="hop-no">第 ${h.hop} 跳</span><span class="hop-name">${h.name}</span>
+                  <span class="badge ${h.engine === "llm" ? "badge-ok" : h.engine === "keyword-match" ? "badge-info" : "badge-gray"}">${h.engine === "llm" ? "大模型" : h.engine === "keyword-match" ? "关键词检索" : "本地规则"}</span></div>
+                <div class="hop-sum">${esc(h.summary)}</div>
+                ${h.items.length ? `<ul class="hop-items">${h.items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : ""}
+              </div>`).join("")}
+          </div>
+
+          ${(d.clauses || []).length ? `
+          <div class="block">
+            <div class="block-title">依据条款<small>逐字原文，来自 handbook_articles · 点链接可核对权威出处</small></div>
+            ${d.clauses.map(c => `
+              <div class="clause">
+                <div class="clause-head"><span class="clause-no">C${c.no}</span>
+                  <span class="clause-doc">${esc(c.doc_title)}</span>
+                  <span class="clause-art">${esc(c.article_no)}</span>
+                  <span class="badge badge-gray">${esc(c.source_label)}</span>
+                  <span class="clause-trust">可信度 ${c.trust}${c.doc_year ? " · " + c.doc_year + "年版" : ""}</span></div>
+                ${c.title ? `<div class="clause-title">${esc(c.title)}</div>` : ""}
+                <div class="clause-text">${esc(c.text)}</div>
+                <div class="clause-foot">
+                  <span>命中：${(c.matched || []).map(esc).join("、") || "按风险类型对齐"}</span>
+                  ${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noreferrer">核对原文 ↗</a>` : ""}
+                  ${c.note ? `<span>${esc(c.note)}</span>` : ""}
+                </div>
+              </div>`).join("")}
+          </div>` : ""}
+
+          ${basisOf.length ? `
+            <div class="callout callout-warn">有 ${basisOf.length} 条命中（${basisOf.map(i => "E" + i).join("、")}）在条款库里对不上任何条款。
+            雷达宁可说「没有依据」，也不会让大模型编一条出来——但风险等级照常给，
+            涉及钱和验证码的一律按高危处理，可直接找辅导员或 110 核实。</div>` : ""}
+          <div class="callout callout-info">💡 ${esc(d.chain_advice || d.advice)}</div>`;
+        loadLogs();
+      } finally { btn.disabled = false; btn.textContent = "开始鉴雷"; }
+    }
+
+    const LV_NAME = { high_risk: "高危", medium_risk: "中危", low_risk: "低危", likely_safe: "安全" };
+    const SCENE_NAME = { job: "求职鉴坑", fraud: "聊天鉴诈", notice: "通知排查" };
+
+    async function loadLogs() {
+      const chip = document.querySelector("#log-filter .chip.active");
+      const params = new URLSearchParams({ limit: "20" });
+      if (chip.dataset.scene) params.set("scene", chip.dataset.scene);
+      const d = await (await fetch(`${API}/safety/logs?${params}`)).json();
+      const s = d.stats || {};
+      document.getElementById("stats").innerHTML = `
+        <div class="stat"><div class="stat-num">${d.total}</div><div class="stat-label">累计扫描次数</div></div>
+        <div class="stat"><div class="stat-num is-bad">${s.high_risk || 0}</div><div class="stat-label">判为高危</div></div>
+        <div class="stat"><div class="stat-num is-warn">${(s.medium_risk || 0) + (s.low_risk || 0)}</div><div class="stat-label">中低危待观察</div></div>
+        <div class="stat"><div class="stat-num is-ok">${s.likely_safe || 0}</div><div class="stat-label">未见异常</div></div>`;
+      const body = document.querySelector("#ledger tbody");
+      body.innerHTML = d.data.map(r => `
+        <tr class="${r.level === 'likely_safe' ? 'is-safe' : ''}">
+          <td class="nowrap">${(r.created_at || "").replace("T", " ").slice(5, 16)}</td>
+          <td class="nowrap">${SCENE_NAME[r.scene] || r.scene}</td>
+          <td class="nowrap">${esc(r.nickname || "-")}</td>
+          <td>${esc(r.excerpt)}</td>
+          <td>${r.skill ? `<span class="badge badge-info" style="margin-right:6px">${esc(r.skill)}</span>` : ""}${r.risk_types ? esc(r.risk_types) : "—"}</td>
+          <td class="nowrap lv lv-${r.level}">${LV_NAME[r.level] || r.level}</td>
+          <td class="nowrap">${r.score}</td>
+          <td class="nowrap">${r.engine === "llm" ? "大模型" : "规则"}</td>
+          <td>${r.cited_articles ? esc(r.cited_articles) : '<span class="hint">未引用条款</span>'}</td>
+        </tr>`).join("")
+        || '<tr><td colspan="9"><div class="empty">该筛选条件下没有记录</div></td></tr>';
+    }
+
+    function esc(str) {
+      const td = document.createElement("td");
+      td.textContent = str || "";
+      return td.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    document.getElementById("log-filter").addEventListener("click", e => {
+      const b = e.target.closest(".chip"); if (!b) return;
+      document.querySelectorAll("#log-filter .chip").forEach(x => x.classList.toggle("active", x === b));
+      loadLogs();
+    });
+
+    // 顶栏显示当前身份（个人中心存的昵称），让台账的「提交人」有归属
+    const nick = localStorage.getItem("cm_nickname");
+    const who = document.getElementById("who-badge");
+    if (nick) { who.textContent = "当前身份：" + nick; who.className = "badge badge-primary"; }
+    else { who.textContent = "未建档（台账记为匿名）"; }
+
+    // 条款库：雷达引用的每一条都能在这里翻出来核对，锁住的灰显但仍列着（透明比藏起来好）
+    const SCENE_CN = { job: "求职", fraud: "鉴诈", notice: "通知", all: "通用" };
+    let hbScene = "";
+    async function loadHandbook() {
+      const q = document.getElementById("hb-q").value.trim();
+      const params = new URLSearchParams({ limit: "60" });
+      if (hbScene) params.set("scene", hbScene);
+      if (q) params.set("q", q);
+      const d = await (await fetch(`${API}/safety/handbook?${params}`)).json();
+      const st = d.stats || {};
+      document.getElementById("hb-stats").innerHTML =
+        `库里 <b>${st.total}</b> 条 · 参与检索 <b>${st.citable}</b> 条 · 未核实锁住 ${st.total - st.citable} 条` +
+        Object.entries(st.by_scene || {}).map(([k, v]) => `｜${SCENE_CN[k] || k} ${v.citable}/${v.total}`).join("") +
+        `｜来源：法律 ${st.by_source?.law || 0}、部委文件 ${st.by_source?.regulation || 0}、司法文件 ${st.by_source?.judicial || 0}、校规 ${st.by_source?.school || 0}`;
+      document.getElementById("hb-sub").textContent =
+        `共 ${d.data.length} 条${hbScene ? "（" + (SCENE_CN[hbScene] || hbScene) + "场景）" : ""}${q ? " · 关键词「" + q + "」" : ""}`;
+      document.getElementById("hb-list").innerHTML = d.data.map(r => `
+        <div class="hb-row ${r.enabled ? "" : "is-off"}">
+          <span class="hb-art">${esc(r.article_no)}</span>
+          <span class="hb-doc">${esc(r.doc_title)}${r.doc_year ? "（" + r.doc_year + "）" : ""}</span>
+          <span class="badge badge-gray">${esc(r.source_label)}</span>
+          <span class="hint">${SCENE_CN[r.scene] || r.scene} · 可信度 ${r.trust}${r.enabled ? "" : " · 未核实，不参与引用"}</span>
+          <div class="hb-text">${esc(r.text.slice(0, 120))}${r.text.length > 120 ? "…" : ""}
+            ${r.url ? ` <a href="${esc(r.url)}" target="_blank" rel="noreferrer">原文 ↗</a>` : ""}
+            ${r.note ? `<br><span class="hint">${esc(r.note)}</span>` : ""}</div>
+        </div>`).join("") || '<div class="empty">没有匹配的条款</div>';
+    }
+
+    document.getElementById("hb-filter").addEventListener("click", e => {
+      const b = e.target.closest(".chip"); if (!b) return;
+      hbScene = b.dataset.scene;
+      document.querySelectorAll("#hb-filter .chip").forEach(x => x.classList.toggle("active", x === b));
+      loadHandbook();
+    });
+    document.getElementById("hb-q").addEventListener("keydown", e => { if (e.key === "Enter") loadHandbook(); });
+
+    applyScene(); fillSample(); loadSkills(); loadLogs(); loadHandbook();
+  </script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23B0432E'/%3E%3Crect x='8' y='8' width='84' height='84' rx='10' fill='none' stroke='%23FCFBF6' stroke-width='5' opacity='.8'/%3E%3Ctext x='50' y='72' font-size='56' text-anchor='middle' fill='%23FCFBF6' font-family='serif' font-weight='700'%3E%E6%8E%A7%3C/text%3E%3C/svg%3E">
+  <title>掌控校园 - AI 校园情报官</title>
+  <link rel="stylesheet" href="common.css?v=12">
+  <style>
+    .src-chip-btn { border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 12.5px; padding: 3px 11px; border-radius: 999px; cursor: pointer; transition: border-color .15s, background .15s, color .15s, transform .12s ease; }
+    .src-chip-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .src-chip-btn:active { transform: scale(.94); }
+    .src-chip-btn.on { background: var(--ink); border-color: var(--ink); color: #FCFBF6; }
+    .rep-line { font-size: 12.5px; padding: 5px 10px; border-radius: 7px; margin-top: 6px; }
+    .rep-ok { background: var(--ok-bg); color: var(--ok); }
+    .rep-err { background: var(--bad-bg); color: var(--bad); }
+    .official-sum { font-size: 13px; color: var(--text-sub); margin: 5px 0; }
+    .official-sum a { color: var(--text); text-decoration: none; }
+    .official-sum a:hover { color: var(--primary); }
+    .src-url { font-size: 12px; color: var(--text-faint); word-break: break-all; }
+    /* 个性化简报：相关度徽章不挤压长标题，命中词和图谱概念一行行摊开 */
+    .brief-item { display: flex; gap: 10px; padding: 11px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+    .brief-item:last-child { border-bottom: 0; }
+    .brief-score { flex: none; min-width: 58px; padding: 3px 6px; border-radius: 8px; background: var(--primary-soft);
+      color: var(--primary); font-size: 11.5px; font-weight: 700; text-align: center; margin-top: 2px; }
+    .brief-main { flex: 1; min-width: 0; }
+    .brief-title a { color: var(--text); text-decoration: none; font-weight: 600; }
+    .brief-title a:hover { color: var(--primary); }
+    .brief-title .badge { margin-left: 6px; }
+    .brief-why { margin-top: 5px; font-size: 12px; color: var(--text-sub); display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline; line-height: 1.7; }
+    .kw-chip { padding: 1px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 11.5px; font-weight: 600; }
+    .kg-link { padding: 1px 8px; border-radius: 999px; border: 1px solid rgba(176,67,46,.42); color: var(--primary); font-size: 11.5px; text-decoration: none; }
+    .kg-link:hover { background: rgba(176,67,46,.10); }
+    /* AI 提炼结果块：暖白嵌板 + 发丝分隔（此前一直裸奔浏览器默认样式） */
+    .summary-box { background: var(--card-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; line-height: 1.75; }
+    .divider { height: 1px; background: var(--border); border: 0; margin: 14px 0; }
+    .hl-item { display: flex; gap: 8px; align-items: baseline; padding: 5px 0; font-size: 13px; color: var(--text-sub); }
+    .hl-item::before { content: "◆"; flex: none; color: var(--primary-bright); font-size: 9px; }
+    dl.kv { display: grid; grid-template-columns: 72px 1fr; gap: 6px 12px; margin: 12px 0 0; }
+    dl.kv dt { font-size: 12px; color: var(--text-faint); }
+    dl.kv dd { margin: 0; font-size: 13px; color: var(--text); }
+    .src-chip { font-size: 12px; color: var(--text-sub); }
+  </style>
+  <script src="/web/common.js?v=12" defer></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-mark">控</span>掌控校园</a>
+      <nav class="nav">
+        <a href="/web/notice.html" class="active">情报官</a>
+        <a href="/web/kg_demo.html">知识图谱</a>
+        <a href="/web/forum.html">论坛</a>
+        <a href="/web/safety.html">安全雷达</a>
+        <a href="/web/profile.html">个人中心</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="page-head">
+      <h1 data-ring>AI 校园情报官</h1>
+      <span class="page-sub">官方源聚合为主信源（<b class="mk">带原文链接可溯源</b>） · 手动贴入兜底 · MySQL 入库 → Redis 缓存首页</span>
+      <div class="head-actions"><span class="badge badge-gray" id="who-badge"></span></div>
+    </div>
+
+    <div class="card" id="brief-card">
+      <h3 class="card-title">个性化简报 · AI 信息整合<span class="card-sub">相关度打分由代码算（可回溯）· AI 只写导语不编内容 · briefing:{昵称} 缓存</span></h3>
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn" id="btn-brief" onclick="loadBriefing()">生成简报</button>
+        <span class="badge badge-gray" id="brief-engine" style="display:none"></span>
+        <span class="badge badge-gray" id="brief-cache" style="display:none"></span>
+      </div>
+      <p class="hint" id="brief-profile" style="margin:10px 0 0"></p>
+      <div class="summary-box" id="brief-intro" style="display:none"></div>
+      <div id="brief-items" style="margin-top:12px"></div>
+    </div>
+
+    <div class="main-side">
+      <div class="stack">
+        <div class="card">
+          <h3 class="card-title">官方通知源<span class="card-sub">notice_sources 表 · 按个人中心填的学校抓 · 只存标题+链接，摘要按需生成</span></h3>
+          <div class="grid grid-2" style="gap:12px">
+            <div>
+              <label>学校（来自个人中心档案）</label>
+              <input id="src-school" list="school-list" placeholder="例：杭州电子科技大学">
+              <datalist id="school-list"></datalist>
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <div class="btn-row" style="margin-top:0">
+                <button class="btn" id="btn-fetch" onclick="fetchOfficial()">拉取最新</button>
+                <button class="btn btn-ghost" onclick="loadOfficial()">刷新列表</button>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap" id="src-chips"></div>
+          <div id="fetch-report"></div>
+          <div id="official-list" style="margin-top:14px"><div class="loading-dots"><i></i><i></i><i></i> 加载中…</div></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">手动贴入（兜底）<span class="card-sub">官方源没有的通知才走这里 · AI 提炼摘要与来源，杜绝信息幻觉</span></h3>
+          <label>通知标题</label>
+          <input id="n-title" placeholder="例：关于举办蓝桥杯校内选拔赛的通知">
+          <label>通知正文</label>
+          <textarea id="n-content" style="min-height:130px" placeholder="把通知原文整段粘贴进来……"></textarea>
+          <div class="grid grid-2" style="gap:12px">
+            <div>
+              <label>原文链接（溯源凭证，可空）</label>
+              <input id="n-url" placeholder="https://jwc.xxx.edu.cn/…">
+            </div>
+            <div>
+              <label>发布日期（可空）</label>
+              <input id="n-date" placeholder="2026-10-25">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-ingest" onclick="ingest()">AI 提炼并存入数据库</button>
+          </div>
+
+          <div id="ai-result">
+            <div class="divider"></div>
+            <div class="summary-box" id="r-summary"></div>
+            <div class="btn-row" style="margin-top:12px;gap:8px">
+              <span class="src-chip" id="r-source"></span>
+              <span class="badge badge-gray" id="r-engine"></span>
+            </div>
+            <dl class="kv">
+              <dt>关键时间</dt><dd id="r-time"></dd>
+              <dt>核心事件</dt><dd id="r-event"></dd>
+            </dl>
+            <div id="r-highlights"></div>
+            <p class="hint" id="r-note" style="margin-top:10px"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h3 class="card-title">首页最新 5 条<span class="card-sub">Redis 缓存策略 home:latest_notices</span></h3>
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn" onclick="loadLatest()">查询</button>
+            <button class="btn btn-ghost" onclick="clearCache()">清缓存后重查</button>
+            <span class="badge badge-gray" id="cache-badge" style="display:none"></span>
+          </div>
+          <div class="divider"></div>
+          <div id="latest"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">两条入库链路</h3>
+          <div class="item"><div class="item-title">① 官方源（主）</div><div class="official-sum">定时/手动抓学校各部委办列表页 → 标题+链接直接入库 → 点「AI 一句话」才抓详情页生成摘要，全程带原文链接可溯源</div></div>
+          <div class="item"><div class="item-title">② 手动贴入（兜底）</div><div class="official-sum">贴原文 → 大模型提炼摘要+来源 → 入库，官方源覆盖不到的通知用它补</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = location.origin.startsWith("http") ? "" : "http://127.0.0.1:8100";
+    let deptFilter = "";
+    // 昵称来自个人中心，简报要拿它当打分档案（声明在顶部，页面加载即用的函数都依赖它）
+    const nick = localStorage.getItem("cm_nickname") || "";
+
+    const $ = id => document.getElementById(id);
+
+    function esc(str) {
+      const s = document.createElement("span");
+      s.textContent = str || "";
+      // 引号也要转：esc 的输出经常落进 title="…"、data-x="…" 属性里
+      return s.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    async function loadSources() {
+      const d = await (await fetch(API + "/notices/sources")).json();
+      const schools = [...new Set(d.data.map(s => s.school))];
+      $("school-list").innerHTML = schools.map(s => `<option value="${esc(s)}">`).join("");
+      const school = $("src-school").value.trim();
+      const mine = d.data.filter(s => s.school === school);
+      $("src-chips").innerHTML = mine.map(s =>
+        `<button class="src-chip-btn${s.dept === deptFilter ? " on" : ""}" data-dept="${esc(s.dept)}" title="${esc(s.note || "")}">${esc(s.dept)}</button>`
+      ).join("") || `<span class="hint">「${esc(school || "未填学校")}」还没录入通知源</span>`;
+    }
+
+    $("src-chips").addEventListener("click", e => {
+      const b = e.target.closest(".src-chip-btn"); if (!b) return;
+      deptFilter = (deptFilter === b.dataset.dept) ? "" : b.dataset.dept;
+      document.querySelectorAll(".src-chip-btn").forEach(x => x.classList.toggle("on", x.dataset.dept === deptFilter));
+      loadOfficial();
+    });
+
+    $("src-school").addEventListener("change", () => {
+      localStorage.setItem("cm_school", $("src-school").value.trim());
+      deptFilter = "";
+      loadSources(); loadOfficial();
+    });
+
+    async function fetchOfficial() {
+      const school = $("src-school").value.trim();
+      if (!school) return alert("先填学校，再去个人中心把学校写进档案");
+      const btn = $("btn-fetch");
+      btn.disabled = true; btn.textContent = "抓取中…";
+      $("fetch-report").innerHTML = "";
+      try {
+        const res = await fetch(`${API}/notices/fetch?school=${encodeURIComponent(school)}`, { method: "POST" });
+        const d = await res.json();
+        if (!res.ok) {
+          $("fetch-report").innerHTML = `<div class="rep-line rep-err">⚠️ ${esc(d.detail || res.status)}</div>`;
+          return;
+        }
+        $("fetch-report").innerHTML =
+          d.report.map(r => r.error
+            ? `<div class="rep-line rep-err">⚠️ ${esc(r.dept)}：${esc(r.error)}</div>`
+            : `<div class="rep-line rep-ok">✅ ${esc(r.dept)}：解析 ${r.fetched} 条，新入库 ${r.new} 条</div>`).join("") +
+          `<p class="hint" style="margin:8px 0 0">本次共新入库 ${d.total_new} 条，重复的按链接自动去重</p>`;
+        loadSources(); loadOfficial();
+      } finally { btn.disabled = false; btn.textContent = "拉取最新"; }
+    }
+
+    async function loadOfficial() {
+      const school = $("src-school").value.trim();
+      const params = new URLSearchParams({ limit: "30" });
+      if (school) params.set("school", school);
+      if (deptFilter) params.set("dept", deptFilter);
+      const d = await (await fetch(`${API}/notices/official?${params}`)).json();
+      $("official-list").innerHTML = d.data.map(n => `
+        <div class="item">
+          <div class="item-title"><a href="${esc(n.source_url)}" target="_blank" rel="noopener">${esc(n.title)}</a></div>
+          <div class="official-sum" id="sum-${n.id}">${n.summary
+            ? esc(n.summary)
+            : `<button class="linkish" onclick="summarize(${n.id}, this)">AI 一句话摘要</button>`}</div>
+          <div class="item-meta">
+            <span class="badge badge-primary">${esc(n.ai_source)}</span>
+            <span>${n.publish_date || (n.created_at || "").slice(0, 10)}</span>
+          </div>
+        </div>`).join("") || '<div class="empty">还没有官方通知，点上面「拉取最新」试试</div>';
+    }
+
+    async function summarize(id, btn) {
+      btn.disabled = true; btn.textContent = "抓详情页中…";
+      try {
+        const res = await fetch(`${API}/notices/${id}/summarize`, { method: "POST" });
+        const d = await res.json();
+        if (!res.ok) {
+          document.getElementById(`sum-${id}`).innerHTML = `<span class="hint">⚠️ ${esc(d.detail || res.status)}</span>`;
+          return;
+        }
+        document.getElementById(`sum-${id}`).innerHTML =
+          esc(d.summary) + ` <span class="badge ${d.engine === "llm" ? "badge-ok" : "badge-warn"}">${d.engine === "llm" ? "大模型" : "本地规则"}</span>`;
+      } finally { btn.disabled = false; }
+    }
+
+    async function ingest() {
+      const body = {
+        title: $("n-title").value.trim(),
+        content: $("n-content").value.trim(),
+        source_url: $("n-url").value.trim(),
+        publish_date: $("n-date").value.trim(),
+      };
+      if (!body.title || !body.content) return alert("标题和正文都要填");
+      const btn = $("btn-ingest");
+      btn.disabled = true; btn.textContent = "AI 处理中…";
+      try {
+        const res = await fetch(API + "/notices/ai", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        });
+        const d = await res.json();
+        if (!res.ok) return alert("失败：" + (d.detail || res.status));
+        const a = d.ai;
+        $("r-summary").textContent = a.summary;
+        $("r-source").textContent = "[来源: " + a.source + "]";
+        $("r-engine").textContent = a.engine === "llm" ? "华为云 MaaS 大模型" : "本地规则引擎";
+        $("r-time").textContent = a.time || "未识别";
+        $("r-event").textContent = a.event || "—";
+        $("r-highlights").innerHTML =
+          (a.highlights || []).map(h => `<div class="hl-item">${esc(h)}</div>`).join("");
+        $("r-note").textContent = `已写入 MySQL（id=${d.id}），首页缓存已失效`;
+        $("ai-result").classList.add("show");
+        loadLatest();
+      } finally {
+        btn.disabled = false; btn.textContent = "AI 提炼并存入数据库";
+      }
+    }
+
+    async function loadLatest() {
+      const res = await fetch(API + "/notices/latest");
+      const d = await res.json();
+      const b = $("cache-badge");
+      b.style.display = "";
+      b.textContent = (d.from_cache ? "Redis 缓存命中" : "查 MySQL 并回填缓存") + (d.cache ? " · " + d.cache.ms + "ms" : "");
+      b.className = "badge " + (d.from_cache ? "badge-ok" : "badge-warn");
+      $("latest").innerHTML = d.data.map(n => `
+        <div class="item">
+          <div class="item-title">${esc(n.title)}</div>
+          <div style="margin:5px 0">${esc(n.summary || "（暂无摘要）")}</div>
+          <div class="item-meta">
+            <span class="badge badge-primary">[来源: ${esc(n.ai_source || "未知")}]</span>
+            <span>${n.publish_date || ""}</span>
+          </div>
+        </div>`).join("") || '<div class="empty">库里还没有通知</div>';
+    }
+
+    async function clearCache() {
+      await fetch(API + "/debug/drop-cache", { method: "POST" });
+      loadLatest();
+    }
+
+    async function loadBriefing() {
+      const box = $("brief-items");
+      const btn = $("btn-brief");
+      btn.disabled = true; btn.textContent = "AI 整合中…";
+      box.innerHTML = '<div class="loading-dots"><i></i><i></i><i></i> 扫描通知库、按档案打分…</div>';
+      try {
+        const q = nick ? "?nickname=" + encodeURIComponent(nick) : "";
+        const res = await fetch(API + "/notices/briefing" + q);
+        const d = await res.json();
+        if (!res.ok) { box.innerHTML = `<div class="empty">⚠️ ${esc(d.detail || res.status)}</div>`; return; }
+        const b = d.data;
+        const eb = $("brief-engine");
+        eb.style.display = "";
+        eb.textContent = b.engine === "llm" ? "华为云 MaaS 大模型整合" : "本地规则引擎整合";
+        eb.className = "badge " + (b.engine === "llm" ? "badge-ok" : "badge-warn");
+        const cb = $("brief-cache");
+        cb.style.display = "";
+        cb.textContent = (d.from_cache ? "Redis 缓存命中" : "查库打分并回填缓存") + (d.cache ? " · " + d.cache.ms + "ms" : "");
+        cb.className = "badge " + (d.from_cache ? "badge-ok" : "badge-warn");
+
+        const p = b.profile || {};
+        $("brief-profile").innerHTML = p.role
+          ? `档案：${esc(p.school || "学校未填")} · ${esc(p.role_label)}${p.goal ? " · 目标 " + esc(p.goal) : ""} · 扫了近 ${b.scanned} 条通知`
+          : "还没在个人中心建档：现在按「最新优先」通用排序；填上身份/目标后，命中词会直接决定排位。";
+
+        $("brief-intro").style.display = "";
+        $("brief-intro").textContent = b.intro;
+
+        box.innerHTML = b.items.map(n => `
+          <div class="brief-item">
+            <div class="brief-score">相关度 ${n.score}</div>
+            <div class="brief-main">
+              <div class="brief-title">${n.official
+                ? `<a href="${esc(n.url || "/web/notice.html")}" target="_blank" rel="noopener">${esc(n.title)}</a>`
+                : esc(n.title)}<span class="badge badge-primary">${esc(n.dept)}</span></div>
+              <div class="brief-why">
+                ${n.why.length ? `命中：${n.why.map(w => `<span class="kw-chip">${esc(w)}</span>`).join("")}` : "加分项：新近发布" + (n.official ? " · 本校官方源" : "")}
+                ${n.kg.length ? `｜图谱概念：${n.kg.map(k => `<a class="kg-link" href="/web/kg_demo.html?focus=${encodeURIComponent(k)}" title="去知识图谱以此为中心织网">${esc(k)} → 织网</a>`).join("")}` : ""}
+              </div>
+            </div>
+          </div>`).join("") || '<div class="empty" style="margin-top:8px">没筛出与你相关的通知——先点上面「拉取最新」抓一轮官方源</div>';
+      } finally {
+        btn.disabled = false; btn.textContent = "生成简报";
+      }
+    }
+
+    $("src-school").value = localStorage.getItem("cm_school") || "杭州电子科技大学";
+    loadSources(); loadOfficial(); loadLatest(); loadBriefing();
+
+    // 顶栏身份与其他页面保持一致（个人中心存的昵称）
+    const who = $("who-badge");
+    if (nick) { who.textContent = "当前身份：" + nick; who.className = "badge badge-primary"; }
+    else { who.textContent = "未建档，去个人中心填一次即可"; }
+  </script>
+</body>
+</html>

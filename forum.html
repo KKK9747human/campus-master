@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23B0432E'/%3E%3Crect x='8' y='8' width='84' height='84' rx='10' fill='none' stroke='%23FCFBF6' stroke-width='5' opacity='.8'/%3E%3Ctext x='50' y='72' font-size='56' text-anchor='middle' fill='%23FCFBF6' font-family='serif' font-weight='700'%3E%E6%8E%A7%3C/text%3E%3C/svg%3E">
+  <title>掌控校园 - 经验论坛</title>
+  <link rel="stylesheet" href="common.css?v=12">
+  <style>
+    .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .search { display: flex; gap: 8px; margin-left: auto; }
+    .search input { width: 230px; }
+    .post-body.clip { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .rel-line { font-size: 12.5px; padding: 5px 10px; background: var(--primary-soft); border-radius: 7px; margin-top: 6px; color: var(--primary); }
+    .rank-item { display: flex; align-items: baseline; gap: 9px; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+    .rank-item:last-child { border-bottom: 0; }
+    .rank-no { font-weight: 800; color: var(--primary); flex: none; width: 18px; }
+    .rank-title { color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rank-title:hover { color: var(--primary); }
+    .rank-likes { margin-left: auto; color: var(--text-faint); font-size: 12px; flex: none; }
+    /* ---- 发帖编辑器 ---- */
+    .toolbar2 { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    .tool-btn { border: 1px solid var(--border); background: var(--card); border-radius: 7px; padding: 3px 9px; font-size: 12.5px; cursor: pointer; color: var(--text); transition: border-color .15s, color .15s, transform .12s ease; }
+    .tool-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .tool-btn:active { transform: scale(.93); }
+    .char-count { margin-left: auto; font-size: 12px; color: var(--text-faint); }
+    .img-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .thumb { position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; }
+    .thumb-x { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border: 0; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; line-height: 1; cursor: pointer; }
+    .p-preview { border: 1px dashed var(--border); border-radius: 10px; padding: 10px 14px; min-height: 96px; font-size: 14px; }
+    /* ---- markdown-lite 渲染 ---- */
+    .md-h { font-weight: 800; font-size: 15.5px; margin: 6px 0 2px; }
+    .md-p { margin: 3px 0; }
+    .md-quote { border-left: 3px solid var(--primary); background: var(--primary-soft); padding: 6px 10px; border-radius: 0 8px 8px 0; margin: 5px 0; color: var(--primary); }
+    .md-list { margin: 3px 0 3px 18px; }
+    .md-code { background: #0f172a; color: #e2e8f0; padding: 0; border-radius: 8px; overflow: hidden; font-size: 12.5px; margin: 5px 0; }
+    .md-code code { display: block; padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; }
+    .md-inline { background: var(--primary-soft); color: var(--primary); padding: 1px 5px; border-radius: 5px; font-size: 12.5px; }
+    /* 代码块工具条：语言标签 + 运行（仅 js）+ 复制 */
+    .code-bar { display: flex; gap: 6px; align-items: center; justify-content: flex-end; padding: 4px 8px; background: rgba(255,255,255,.07); border-bottom: 1px solid rgba(255,255,255,.09); }
+    .code-lang { margin-right: auto; font-family: var(--font-mono); font-size: 11px; color: #93a3b8; letter-spacing: .08em; text-transform: uppercase; }
+    .code-run, .code-copy { border: 1px solid rgba(255,255,255,.18); background: transparent; color: #cbd5e1; font: inherit; font-size: 11.5px; border-radius: 6px; padding: 2px 9px; cursor: pointer; }
+    .code-run { color: #8fd6a9; border-color: rgba(143,214,169,.4); font-weight: 600; }
+    .code-run:hover { background: rgba(143,214,169,.12); }
+    .code-copy:hover { border-color: #93a3b8; color: #fff; }
+    .code-out { background: #0b1220; color: #b8c4d4; border: 1px solid #22304a; border-top: 0; border-radius: 0 0 8px 8px; font-family: var(--font-mono); font-size: 12px; padding: 8px 12px; margin: -3px 0 5px; white-space: pre-wrap; }
+    .code-out:empty { display: none; }
+    .code-out-line { padding: 1px 0; }
+    .code-out-line.err { color: #f19999; }
+    .code-out-line.dim { color: #64748b; }
+    /* ---- 发帖弹窗 ---- */
+    .modal-mask { position: fixed; inset: 0; background: rgba(35,33,28,.44); backdrop-filter: blur(3px); display: flex; align-items: flex-start; justify-content: center; padding: 5vh 16px 24px; z-index: 800; overflow-y: auto; }
+    .modal-mask[hidden] { display: none; }
+    .modal { width: min(760px, 100%); background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 8px 8px 0 rgba(35,33,28,.16); padding: 20px 22px 18px; animation: fadeUp .25s ease; }
+    .modal-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 2px; }
+    .modal-x { margin-left: auto; border: 0; background: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--text-faint); padding: 2px 8px; border-radius: 7px; flex: none; }
+    .modal-x:hover { color: var(--bad); background: rgba(160,44,44,.08); }
+    .composer-foot { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 2px; }
+    #draft-hint { margin-left: auto; }
+    /* ---- 帖子配图 + 灯箱 ---- */
+    .feed-imgs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0 2px; }
+    .feed-img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; cursor: zoom-in; }
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.72); display: flex; align-items: center; justify-content: center; z-index: 999; cursor: zoom-out; animation: lbIn .2s ease; }
+    .lightbox img { max-width: 92%; max-height: 92%; border-radius: 12px; animation: lbZoom .22s ease; }
+    @keyframes lbIn { from { opacity: 0; } }
+    @keyframes lbZoom { from { transform: scale(.9); opacity: 0; } }
+  </style>
+  <script src="/web/common.js?v=12" defer></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-mark">控</span>掌控校园</a>
+      <nav class="nav">
+        <a href="/web/notice.html">情报官</a>
+        <a href="/web/kg_demo.html">知识图谱</a>
+        <a href="/web/forum.html" class="active">论坛</a>
+        <a href="/web/safety.html">安全雷达</a>
+        <a href="/web/profile.html">个人中心</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="page-head">
+      <h1 data-ring>经验论坛</h1>
+      <span class="page-sub">学长学姐的经验帖，也是知识图谱的数据来源 · 点赞满 <b id="line">30</b> <b class="mk">自动进精华</b></span>
+      <div class="head-actions">
+        <span class="badge badge-gray" id="who-badge"></span>
+        <button class="btn" onclick="openComposer()">✍ 写经验帖</button>
+        <a class="btn btn-ghost" href="/web/kg_demo.html">看它长进了哪张图</a>
+      </div>
+    </div>
+
+    <div class="main-side">
+      <div class="card">
+        <div class="toolbar">
+          <div class="segmented" id="filter">
+            <button class="active" data-filter="all">全部</button>
+            <button data-filter="essence">精华</button>
+            <button data-filter="mine">我的</button>
+          </div>
+          <div class="search">
+            <input id="kw" placeholder="搜标题或正文，如：蓝桥杯">
+            <button class="btn" onclick="loadPosts()">搜索</button>
+          </div>
+        </div>
+        <div id="posts"><div class="loading-dots"><i></i><i></i><i></i> 加载中…</div></div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h3 class="card-title">精华热榜<span class="card-sub">按点赞数排序</span></h3>
+          <div id="rank"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">发一篇帖 = 长一张图</h3>
+          <p class="hint" style="margin:0 0 12px">帖子里提到的概念和先后关系会被 AI 抽成三元组合并进知识图谱——你写的每篇经验，都是别人图谱里的新节点。</p>
+          <button class="btn" onclick="openComposer()">✍ 写经验帖</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="composer" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-label="写经验帖">
+      <div class="modal-head">
+        <div>
+          <h3 class="card-title" style="margin:0">写经验帖</h3>
+          <span class="hint">发布后 AI 自动抽三元组长进图谱 · 正文里写 <code class="md-inline">```js</code> 代码块可直接运行 · 内容随输入自动存草稿</span>
+        </div>
+        <button class="modal-x" onclick="closeComposer()" title="关闭（内容已自动保存）">×</button>
+      </div>
+      <label>标题</label>
+      <input id="p-title" placeholder="例：打蓝桥杯的正确顺序">
+      <div class="toolbar2">
+        <button class="tool-btn" onclick="prefixLine('# ')" title="小节标题">H</button>
+        <button class="tool-btn" onclick="wrapSel('**')" title="加粗"><b>B</b></button>
+        <button class="tool-btn" onclick="prefixLine('- ')" title="列表">• 列表</button>
+        <button class="tool-btn" onclick="prefixLine('> ')" title="引用">引用</button>
+        <button class="tool-btn" onclick="wrapSel('\n```js\n', '\n```\n')" title="插入 JS 代码块（可运行）">代码</button>
+        <button class="tool-btn" onclick="document.getElementById('img-file').click()" title="上传配图">🖼 配图</button>
+        <button class="tool-btn" id="btn-preview" onclick="togglePreview()">预览</button>
+        <span class="char-count" id="char-count">0/2000</span>
+        <input type="file" id="img-file" accept="image/*" multiple hidden>
+      </div>
+      <textarea id="p-content" maxlength="2000" style="min-height:200px" placeholder="例：想拿省一，**C语言**要先学，学完C语言才能啃数据结构……&#10;&#10;```js&#10;console.log('这段代码贴进帖子就能运行')&#10;```&#10;支持拖图片进来，或直接 Ctrl+V 粘贴截图"></textarea>
+      <div class="img-row" id="img-thumbs"></div>
+      <div class="p-preview" id="p-preview" style="display:none"></div>
+      <label>署名（默认取个人中心昵称）</label>
+      <input id="p-author">
+      <div class="composer-foot">
+        <button class="btn" id="btn-post" onclick="publishPost()">发布并抽取三元组</button>
+        <span class="hint">Ctrl+Enter 快速发布</span>
+        <span class="hint" id="draft-hint"></span>
+      </div>
+      <div id="triple-log"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = location.origin.startsWith("http") ? "" : "http://127.0.0.1:8100";
+    let filter = "all";
+    let previewOn = false;
+    const myImgs = [];                       // 待发布配图（/upload 返回的站内 URL）
+    const nick = localStorage.getItem("cm_nickname") || "";
+
+    const $ = id => document.getElementById(id);
+
+    const who = $("who-badge");
+    if (nick) { who.textContent = "当前身份：" + nick; who.className = "badge badge-primary"; }
+    else { who.textContent = "未设置昵称，发帖记为匿名"; }
+    $("p-author").value = nick;
+
+    document.getElementById("filter").addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      filter = b.dataset.filter;
+      document.querySelectorAll("#filter button").forEach(x => x.classList.toggle("active", x === b));
+      if (filter === "mine" && !nick) {
+        document.getElementById("posts").innerHTML =
+          '<div class="empty">还没有建档，先去<a href="/web/profile.html">个人中心</a>填昵称</div>';
+        return;
+      }
+      loadPosts();
+    });
+    document.getElementById("kw").addEventListener("keydown", e => { if (e.key === "Enter") loadPosts(); });
+
+    function esc(str) {
+      const td = document.createElement("span");
+      td.textContent = str || "";
+      // 引号也要转：esc 的输出经常落进 title="…"、onclick="…" 属性里
+      return td.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    // ---- markdown-lite：先整体 HTML 转义再打标记，杜绝 XSS ----
+    function mdInline(s) {
+      return s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+              .replace(/`([^`]+)`/g, '<code class="md-inline">$1</code>');
+    }
+
+    function mdLite(src) {
+      let html = "", code = false, lang = "", list = false;
+      const closeList = () => { if (list) { html += "</ul>"; list = false; } };
+      for (const line of esc(src).split(/\r?\n/)) {
+        const fence = line.trim().match(/^```(\w*)/);
+        if (fence) {
+          closeList();
+          if (!code) { code = true; lang = (fence[1] || "").toLowerCase(); html += `<pre class="md-code" data-lang="${esc(lang)}"><code>`; }
+          else { code = false; html += "</code></pre>"; }
+          continue;
+        }
+        if (code) { html += line + "\n"; continue; }
+        const t = line.trim();
+        if (/^- /.test(t)) {
+          if (!list) { html += '<ul class="md-list">'; list = true; }
+          html += "<li>" + mdInline(t.slice(2)) + "</li>";
+          continue;
+        }
+        closeList();
+        if (/^# /.test(t)) html += '<div class="md-h">' + mdInline(t.slice(2)) + "</div>";
+        else if (/^&gt; /.test(t)) html += '<div class="md-quote">' + mdInline(t.slice(5)) + "</div>";
+        else if (t) html += '<p class="md-p">' + mdInline(t) + "</p>";
+      }
+      closeList();
+      if (code) html += "</code></pre>";
+      return html;
+    }
+
+    // ---- 代码块增强：语言标签 + 复制 + js 可运行（Web Worker 沙箱，3 秒强制终止）----
+    function enhanceCodeBlocks(root) {
+      root.querySelectorAll("pre.md-code").forEach(pre => {
+        if (pre.querySelector(".code-bar")) return;
+        const lang = (pre.dataset.lang || "").toLowerCase();
+        const bar = document.createElement("div");
+        bar.className = "code-bar";
+        const runnable = lang === "js" || lang === "javascript";
+        bar.innerHTML = `<span class="code-lang">${esc(lang || "text")}</span>`
+          + (runnable ? '<button class="code-run" type="button">▶ 运行</button>' : "")
+          + '<button class="code-copy" type="button">复制</button>';
+        pre.prepend(bar);
+        bar.querySelector(".code-copy").onclick = () => {
+          navigator.clipboard.writeText(pre.querySelector("code").textContent).then(() => {
+            const b = bar.querySelector(".code-copy");
+            b.textContent = "已复制";
+            setTimeout(() => b.textContent = "复制", 1200);
+          });
+        };
+        if (runnable) bar.querySelector(".code-run").onclick = () => runJs(pre);
+      });
+    }
+
+    function runJs(pre) {
+      const code = pre.querySelector("code").textContent;
+      let out = pre.nextElementSibling;
+      if (!out || !out.classList.contains("code-out")) {
+        out = document.createElement("div");
+        out.className = "code-out";
+        pre.after(out);
+      }
+      if (out._worker) out._worker.terminate();
+      out.innerHTML = '<div class="code-out-line dim">运行中…</div>';
+      const shell = `self.onmessage=null;
+        const send=(t,a)=>postMessage({t,a});
+        console.log=console.info=console.warn=console.error=(...a)=>send("log",a.map(x=>{
+          try { return typeof x==="string" ? x : JSON.stringify(x); } catch(_) { return String(x); } }));
+        try { (function(){ ${code} })(); } catch(e) { send("err", (e && e.message) ? e.message : String(e)); }
+        send("done");`;
+      const w = new Worker(URL.createObjectURL(new Blob([shell], { type: "text/javascript" })));
+      out._worker = w;
+      const kill = setTimeout(() => { w.terminate(); addLine("⏱ 超过 3 秒，已强制终止（可能是死循环）", "err"); }, 3000);
+      const addLine = (txt, cls) => {
+        if (out.querySelector(".dim")) out.innerHTML = "";
+        const d = document.createElement("div");
+        d.className = "code-out-line" + (cls ? " " + cls : "");
+        d.textContent = txt;
+        out.appendChild(d);
+      };
+      w.onmessage = e => {
+        const { t, a } = e.data;
+        if (t === "log") (Array.isArray(a) ? a : [a]).forEach(x => addLine(String(x)));
+        else if (t === "err") addLine("❌ " + a, "err");
+        else if (t === "done") { clearTimeout(kill); w.terminate(); addLine("— 运行结束 —", "dim"); }
+      };
+      w.onerror = e => { clearTimeout(kill); w.terminate(); addLine("❌ " + (e.message || "脚本错误"), "err"); };
+    }
+
+    // ---- 编辑器工具条 ----
+    function wrapSel(before, after = before) {
+      const ta = $("p-content");
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      ta.value = ta.value.slice(0, s) + before + ta.value.slice(s, e) + after + ta.value.slice(e);
+      ta.focus();
+      ta.selectionStart = s + before.length;
+      ta.selectionEnd = e + before.length;
+      countChars();
+    }
+
+    function prefixLine(pre) {
+      const ta = $("p-content");
+      const cur = ta.selectionStart;
+      const ls = ta.value.lastIndexOf("\n", cur - 1) + 1;
+      ta.value = ta.value.slice(0, ls) + pre + ta.value.slice(ls);
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = cur + pre.length;
+      countChars();
+    }
+
+    function countChars() {
+      $("char-count").textContent = `${$("p-content").value.length}/2000`;
+    }
+    $("p-content").addEventListener("input", countChars);
+
+    function togglePreview() {
+      previewOn = !previewOn;
+      $("p-preview").style.display = previewOn ? "" : "none";
+      $("p-content").style.display = previewOn ? "none" : "";
+      $("btn-preview").textContent = previewOn ? "编辑" : "预览";
+      if (previewOn) {
+        $("p-preview").innerHTML = mdLite($("p-content").value) || '<div class="empty">先写点内容再预览</div>';
+        enhanceCodeBlocks($("p-preview"));
+      }
+    }
+
+    // ---- 配图：选图 / 拖拽 / 粘贴 ----
+    async function uploadFiles(files) {
+      for (const f of files) {
+        if (!f.type.startsWith("image/")) continue;
+        if (f.size > 5 * 1024 * 1024) { alert(`「${f.name}」超过 5MB`); continue; }
+        if (myImgs.length >= 9) { alert("最多 9 张配图"); break; }
+        const fd = new FormData();
+        fd.append("file", f);
+        const res = await fetch(API + "/upload", { method: "POST", body: fd });
+        const d = await res.json();
+        if (!res.ok) { alert("上传失败：" + (d.detail || res.status)); continue; }
+        myImgs.push(d.url);
+      }
+      renderThumbs();
+    }
+
+    function renderThumbs() {
+      $("img-thumbs").innerHTML = myImgs.map((u, i) => `
+        <div class="thumb"><img src="${esc(u)}" onclick="lightbox('${esc(u)}')">
+        <button class="thumb-x" onclick="rmImg(${i})">×</button></div>`).join("");
+    }
+
+    function rmImg(i) { myImgs.splice(i, 1); renderThumbs(); }
+
+    $("img-file").addEventListener("change", e => { uploadFiles([...e.target.files]); e.target.value = ""; });
+    const pContent = $("p-content");
+    pContent.addEventListener("dragover", e => e.preventDefault());
+    pContent.addEventListener("drop", e => { e.preventDefault(); uploadFiles([...e.dataTransfer.files]); });
+    pContent.addEventListener("paste", e => {
+      const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith("image/"));
+      if (imgs.length) { e.preventDefault(); uploadFiles(imgs); }
+    });
+
+    function lightbox(src) {
+      const ov = document.createElement("div");
+      ov.className = "lightbox";
+      ov.innerHTML = `<img src="${esc(src)}" alt="">`;
+      ov.onclick = () => ov.remove();
+      document.body.appendChild(ov);
+    }
+
+    async function loadPosts() {
+      const params = new URLSearchParams({ filter, limit: "20" });
+      if (filter === "mine") params.set("author", nick);
+      const kw = document.getElementById("kw").value.trim();
+      if (kw) params.set("keyword", kw);
+      const d = await (await fetch(`${API}/posts/latest?${params}`)).json();
+      document.getElementById("line").textContent = d.essence_line;
+      const box = document.getElementById("posts");
+      box.innerHTML = d.data.map(p => `
+        <div class="post">
+          <div class="post-head">
+            <span class="post-title">${esc(p.title)}</span>
+            ${p.is_essence ? '<span class="badge post-essence">精华</span>' : ""}
+          </div>
+          <div class="post-body clip">${mdLite(p.content)}</div>
+          ${(p.images || []).length ? `<div class="feed-imgs">${p.images.map(u =>
+            `<img class="feed-img" src="${esc(u)}" loading="lazy" onclick="lightbox('${esc(u)}')">`).join("")}</div>` : ""}
+          <div class="post-foot">
+            <span>${esc(p.author)}</span><span>${(p.created_at || "").replace("T", " ").slice(0, 16)}</span>
+            <button class="linkish" onclick="toggleBody(this)">展开全文</button>
+            <button class="like-btn" onclick="like(this, ${p.id})">👍 ${p.likes}</button>
+          </div>
+        </div>`).join("") || '<div class="empty">这里还没有帖子</div>';
+      enhanceCodeBlocks(box);
+      loadRank();
+    }
+
+    function toggleBody(btn) {
+      const body = btn.closest(".post").querySelector(".post-body");
+      const open = body.classList.toggle("clip");
+      btn.textContent = open ? "展开全文" : "收起";
+    }
+
+    async function like(btn, id) {
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API}/posts/${id}/like`, { method: "POST" });
+        const d = await res.json();
+        if (!res.ok) return;
+        btn.textContent = "👍 " + d.likes;
+        btn.classList.remove("pop");
+        void btn.offsetWidth;               // 重启动效
+        btn.classList.add("pop");
+        if (d.is_essence && filter === "essence") loadPosts();
+      } finally { btn.disabled = false; }
+    }
+
+    async function loadRank() {
+      const d = await (await fetch(`${API}/posts/latest?filter=essence&limit=6`)).json();
+      document.getElementById("rank").innerHTML = d.data.map((p, i) => `
+        <div class="rank-item">
+          <span class="rank-no">${i + 1}</span>
+          <span class="rank-title" title="${esc(p.title)}">${esc(p.title)}</span>
+          <span class="rank-likes">👍 ${p.likes}</span>
+        </div>`).join("") || '<div class="empty">暂无精华帖，点赞满 ' + d.essence_line + ' 自动上榜</div>';
+    }
+
+    async function publishPost() {
+      const body = {
+        title: $("p-title").value.trim(),
+        content: $("p-content").value.trim(),
+        author: $("p-author").value.trim() || "匿名",
+        images: myImgs.slice(),
+      };
+      if (!body.title || !body.content) return alert("标题和正文都要填");
+      const btn = $("btn-post");
+      btn.disabled = true; btn.textContent = "AI 抽取中…";
+      try {
+        const res = await fetch(API + "/posts", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        });
+        const d = await res.json();
+        if (!res.ok) return alert("失败：" + (d.detail || res.status));
+        const t = d.triples;
+        const relName = { prerequisite: "前置", related: "相关", contains: "包含" };
+        $("triple-log").innerHTML =
+          `<p class="hint" style="margin:12px 0 0">抽取引擎：${t.engine === "llm" ? "华为云 MaaS 大模型" : "本地规则引擎"}，已合并 ${t.nodes.length} 节点 / ${t.edges.length} 条关系${body.images.length ? `，配图 ${body.images.length} 张` : ""}</p>` +
+          (t.edges.map(e => `<div class="rel-line">${e.source} —${relName[e.relation] || e.relation}→ ${e.target}</div>`).join("")
+           || '<p class="hint">这篇帖子里没抽到关系（换 LLM 引擎效果更好）</p>');
+        $("p-title").value = "";
+        $("p-content").value = "";
+        countChars();
+        clearDraft();
+        myImgs.length = 0;
+        renderThumbs();
+        if (previewOn) togglePreview();
+        loadPosts();
+      } finally { btn.disabled = false; btn.textContent = "发布并抽取三元组"; }
+    }
+
+    // ---- 发帖弹窗 + 草稿自动保存（localStorage，发布成功才清）----
+    const composer = $("composer");
+    const DRAFT_KEY = "cm_post_draft";
+    let draftTimer = null;
+
+    function openComposer() {
+      composer.hidden = false;
+      document.body.style.overflow = "hidden";
+      restoreDraft();
+      $("p-title").focus();
+    }
+    function closeComposer() {
+      flushDraft();
+      composer.hidden = true;
+      document.body.style.overflow = "";
+    }
+    composer.addEventListener("click", e => { if (e.target === composer) closeComposer(); });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && !composer.hidden) closeComposer();
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !composer.hidden && document.activeElement !== $("p-author")) {
+        e.preventDefault(); publishPost();
+      }
+    });
+
+    function saveDraft() {
+      clearTimeout(draftTimer);
+      draftTimer = setTimeout(flushDraft, 400);
+    }
+    function flushDraft() {
+      clearTimeout(draftTimer);
+      const d = { title: $("p-title").value, content: $("p-content").value, author: $("p-author").value, at: Date.now() };
+      if (!d.title && !d.content) { localStorage.removeItem(DRAFT_KEY); $("draft-hint").textContent = ""; return; }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+      $("draft-hint").textContent = "已自动保存 " + new Date().toTimeString().slice(0, 5);
+    }
+    function restoreDraft() {
+      try {
+        const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+        if (!d) return;
+        $("p-title").value = d.title || "";
+        $("p-content").value = d.content || "";
+        $("p-author").value = d.author || nick;
+        countChars();
+        if (d.title || d.content)
+          $("draft-hint").textContent = "已恢复 " + (d.at ? new Date(d.at).toTimeString().slice(0, 5) : "上次") + " 的草稿（配图需重新添加）";
+      } catch (e) { /* 草稿坏了就当没有 */ }
+    }
+    function clearDraft() {
+      localStorage.removeItem(DRAFT_KEY);
+      clearTimeout(draftTimer);
+      $("draft-hint").textContent = "";
+    }
+    ["p-title", "p-content", "p-author"].forEach(id => $(id).addEventListener("input", saveDraft));
+
+    loadPosts();
+  </script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23B0432E'/%3E%3Crect x='8' y='8' width='84' height='84' rx='10' fill='none' stroke='%23FCFBF6' stroke-width='5' opacity='.8'/%3E%3Ctext x='50' y='72' font-size='56' text-anchor='middle' fill='%23FCFBF6' font-family='serif' font-weight='700'%3E%E6%8E%A7%3C/text%3E%3C/svg%3E">
+  <title>掌控校园 - 校园信息一体化平台</title>
+  <link rel="stylesheet" href="/web/common.css?v=12">
+  <style>
+    .hero { text-align: center; padding: 52px 24px 42px; position: relative; }
+    .hero-seal {
+      position: absolute; top: 26px; right: 30px; width: 66px; height: 66px;
+      background: var(--primary); border-radius: 10px; transform: rotate(3deg);
+      box-shadow: inset 0 0 0 2px rgba(252, 251, 246, .78), 3px 3px 0 rgba(35, 33, 28, .14);
+      display: grid; grid-template-columns: 1fr 1fr; place-items: center; padding: 8px;
+      color: #FCFBF6; font-family: var(--font-kai); font-size: 17px; font-weight: 700; line-height: 1;
+      user-select: none;
+    }
+    @media (max-width: 720px) { .hero-seal { display: none; } }
+    .hero h1 {
+      font-family: var(--font-display); font-size: 42px; font-weight: 900;
+      margin: 10px 0 12px; letter-spacing: .06em;
+    }
+    .hero h1 .hl {
+      background: linear-gradient(115deg, var(--primary) 15%, var(--gold) 95%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    /* 首页专属节奏：圈要慢出「手写过程」，圈闭合后印章才落下 */
+    .hero .title-ring path { --ring-dur: 1.9s; --ring-delay: .35s; }
+    .hero-seal { animation: sealStamp .55s cubic-bezier(.34, 1.56, .64, 1) 2.1s both; }
+    @keyframes sealStamp {
+      from { opacity: 0; transform: rotate(9deg) scale(1.7); }
+      to   { opacity: 1; transform: rotate(3deg) scale(1); }
+    }
+    .hero h1 .en { display: block; font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      letter-spacing: .52em; text-indent: .52em; color: var(--text-faint); margin-top: 8px; }
+    .hero .sub { font-size: 15px; color: var(--text-sub); max-width: 720px; margin: 0 auto; line-height: 1.85; }
+    .tech-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 18px; }
+    .tech-chip { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--primary); background: var(--primary-soft);
+      border: 1px solid rgba(176, 67, 46, .32); border-radius: 8px; padding: 4px 13px; }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+    .mod-list { margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--text-sub); }
+    .mod-list li { padding: 6px 0 6px 18px; position: relative; line-height: 1.7; }
+    .mod-list li::before { content: ""; position: absolute; left: 3px; top: 12px; width: 6px; height: 6px;
+      border-radius: 1px; background: var(--primary); opacity: .6; transform: rotate(45deg); }
+    .mod-link { display: inline-block; margin-top: 12px; }
+    .card-head { margin-bottom: 12px; }
+    .card-head .card-title { margin-bottom: 0; }
+    .steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps li { counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+      border-bottom: 1px dashed var(--border); font-size: 13.5px; line-height: 1.75; }
+    .steps li:last-child { border-bottom: 0; }
+    .steps li::before { content: counter(step); position: absolute; left: 0; top: 10px; width: 26px; height: 26px;
+      border-radius: 8px; background: var(--ink); color: #FCFBF6; font-size: 12.5px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; }
+    .steps b { color: var(--text); }
+    .map-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .map-table th, .map-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    .map-table th { color: var(--text-faint); font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .map-table tr:last-child td { border-bottom: 0; }
+    .arrow-cell { color: var(--text-faint); }
+    .status-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; }
+    .status-dot i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+    .status-dot.is-ok i { background: var(--ok); }
+    .status-dot.is-bad i { background: var(--bad); }
+    #demo-msg { font-size: 12.5px; color: var(--ok); font-weight: 600; margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-mark">控</span>掌控校园</a>
+      <nav class="nav">
+        <a href="/web/notice.html">情报官</a>
+        <a href="/web/kg_demo.html">知识图谱</a>
+        <a href="/web/forum.html">论坛</a>
+        <a href="/web/safety.html">安全雷达</a>
+        <a href="/web/profile.html">个人中心</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card hero">
+      <div class="hero-seal" aria-hidden="true"><span>掌</span><span>控</span><span>校</span><span>园</span></div>
+      <div class="eyebrow" style="letter-spacing:.5em;text-indent:.5em">HUAWEI CLOUD · 校园信息一体化平台</div>
+      <h1><span class="ringed">掌控<span class="hl">校园</span><svg class="title-ring" viewBox="0 0 320 96" preserveAspectRatio="none" aria-hidden="true"><path pathLength="100" vector-effect="non-scaling-stroke" d="M 30 26 C 78 10, 180 2, 246 10 C 292 16, 314 36, 304 58 C 292 80, 214 94, 128 92 C 56 90, 12 74, 10 52 C 8 34, 36 20, 86 12"/><path class="tail" pathLength="100" vector-effect="non-scaling-stroke" d="M 96 10 C 70 12, 48 17, 28 27"/></svg></span><span class="en">CAMPUS MASTER · ISSUE NO.1</span></h1>
+      <p class="sub">华为云赛题1 · 校园信息一体化平台。把大学生最头疼的三件事装进一个平台：<b class="mk">该知道什么</b>（官方通知聚合 + AI 摘要溯源）、<b class="mk mk-green">该学什么</b>（经验帖长成知识图谱，沿前置边排学习路径）、<b class="mk mk-pink">该防什么</b>（求职/聊天/通知三类风险一扫即判，逐条给原文证据和法条依据）。</p>
+      <div class="tech-chips">
+        <span class="tech-chip">FastAPI</span><span class="tech-chip">MySQL 8.4（RDS）</span>
+        <span class="tech-chip">Redis（DCS）</span><span class="tech-chip">MaaS 大模型 · OpenAI 兼容</span>
+        <span class="tech-chip">ECharts</span><span class="tech-chip">纯 HTML 前端 · 零构建</span>
+      </div>
+      <div class="hero-btns">
+        <a class="btn" href="/web/notice.html">进入平台 →</a>
+        <a class="btn btn-ghost" href="/docs" target="_blank" rel="noopener">接口文档 Swagger ↗</a>
+        <span class="status-dot" id="st-mysql"><i></i>MySQL</span>
+        <span class="status-dot" id="st-redis"><i></i>Redis</span>
+      </div>
+    </div>
+
+    <div class="marquee" style="margin-top:18px;border-radius:10px" aria-hidden="true">
+      <div class="marquee-track">
+        <span>掌控校园 CAMPUS MASTER</span><span>FastAPI + MySQL 8.4 + Redis + MaaS 大模型 + ECharts</span><span>官方通知源聚合</span><span>知识图谱学习路径</span><span>安全雷达四跳链路</span><span>论坛精华榜</span><span>个人档案驱动全站</span><span>Redis 缓存策略可视化</span><span>掌控校园 CAMPUS MASTER</span><span>FastAPI + MySQL 8.4 + Redis + MaaS 大模型 + ECharts</span><span>官方通知源聚合</span><span>知识图谱学习路径</span><span>安全雷达四跳链路</span><span>论坛精华榜</span><span>个人档案驱动全站</span><span>Redis 缓存策略可视化</span>
+      </div>
+    </div>
+
+    <div class="grid grid-3 grid-eq" style="margin-top:18px">
+      <div class="card">
+        <div class="card-head">
+          <div class="eyebrow">Module 01 · Intelligence</div>
+          <h3 class="card-title">模块1 · AI 情报官</h3>
+        </div>
+        <ul class="mod-list">
+          <li>学校官方通知源（教务处 / 招就处 / 主站）一键聚合，去重入库</li>
+          <li>AI 一句话摘要，强制 <code>[来源: xx]</code> 溯源，点得进原文</li>
+          <li>手动贴入兜底；首页列表走 Redis 缓存，10 分钟回源一次</li>
+        </ul>
+        <a class="btn btn-ghost mod-link" href="/web/notice.html">去情报官 →</a>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="eyebrow">Module 02 · Knowledge Graph</div>
+          <h3 class="card-title">模块2 · 知识图谱</h3>
+        </div>
+        <ul class="mod-list">
+          <li>经验帖由大模型抽三元组合并进图谱——图是「长」出来的，不是画出来的</li>
+          <li>搜索任一概念即以其为中心织出知识网格：内圈直接相关、外圈两跳关联</li>
+          <li>点节点换中心探索、加学习清单，AI 沿前置边补依赖、排出周计划</li>
+        </ul>
+        <a class="btn btn-ghost mod-link" href="/web/kg_demo.html">去图谱 →</a>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="eyebrow">Module 03 · Safety Radar</div>
+          <h3 class="card-title">模块3 · 安全雷达</h3>
+        </div>
+        <ul class="mod-list">
+          <li>求职鉴坑 / 聊天鉴诈 / 通知排查，三类风险一处拦截</li>
+          <li>四跳推理链：富化 → 判定 → 条款检索 → 链路解释，每跳引擎可辨</li>
+          <li>结论必有编号证据 E + 法条原文 C；条款库没覆盖就明说，绝不编条款</li>
+        </ul>
+        <a class="btn btn-ghost mod-link" href="/web/safety.html">去雷达 →</a>
+      </div>
+    </div>
+
+    <div class="grid grid-2 grid-eq" style="margin-top:18px">
+      <div class="card">
+        <div class="card-head">
+          <div class="eyebrow">Support · Community & Profile</div>
+          <h3 class="card-title">支撑能力 · 论坛 & 个人中心</h3>
+        </div>
+        <ul class="mod-list">
+          <li><b>论坛</b>：markdown 编辑器 + 配图上传（魔数校验防假图），点赞满 30 自动进精华，精华榜实时排序 —— 同时是图谱的数据源头</li>
+          <li><b>个人中心</b>：昵称唯一档案（学校/身份/专业），身份驱动图谱筛选、路径推荐与台账归属；档案走 profile:{昵称} 缓存</li>
+        </ul>
+        <div class="btn-row">
+          <a class="btn btn-ghost" href="/web/forum.html">去论坛 →</a>
+          <a class="btn btn-ghost" href="/web/profile.html">去个人中心 →</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="eyebrow">Demo Flow · 5 min</div>
+          <h3 class="card-title">给评委的演示动线<span class="card-sub">五分钟看完所有亮点</span></h3>
+        </div>
+        <ol class="steps">
+          <li><b>个人中心建档</b>：昵称 + 身份选「竞赛选手」，右侧资料卡即时更新</li>
+          <li><b>知识图谱</b>：搜「蓝桥杯」织出知识网格 → 点节点换中心 → 加入学习清单 → AI 排周计划</li>
+          <li><b>论坛发帖</b>：写一篇经验帖，回图谱看它长出新节点</li>
+          <li><b>情报官</b>：拉取学校官方通知 → 点「AI 一句话」看溯源摘要 → 点标题跳原文</li>
+          <li><b>安全雷达</b>：粘一段 HR 聊天记录，看四跳链路 + 编号证据 + 法条原文</li>
+        </ol>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="dropCache()">清空缓存（演示回源）</button>
+          <span id="demo-msg"></span>
+        </div>
+        <p class="hint" style="margin:10px 0 0">清空后去情报官/图谱/个人中心刷新，徽章会从「Redis 缓存命中」变成「查 MySQL 并回填缓存」，再刷一次又变回命中——这就是赛题要求的缓存策略，肉眼可验。</p>
+      </div>
+    </div>
+
+    <div class="grid grid-2 grid-eq" style="margin-top:18px">
+      <div class="card">
+        <div class="card-head">
+          <div class="eyebrow">Cloud Map · Local → Cloud</div>
+          <h3 class="card-title">华为云服务映射<span class="card-sub">本地开发 ↔ 云上部署，切云只改 .env</span></h3>
+        </div>
+        <table class="map-table">
+          <thead><tr><th>华为云服务</th><th></th><th>本项目当前实现</th></tr></thead>
+          <tbody>
+            <tr><td><b>RDS for MySQL</b></td><td class="arrow-cell">→</td><td>MySQL 8.4，连接信息全部读 .env（10 张表：赛题 4 表原样 + 6 张自建扩展表）</td></tr>
+            <tr><td><b>DCS Redis</b></td><td class="arrow-cell">→</td><td>Redis，缓存 5 类热点键：首页通知 / 身份路径 / 档案 / 周计划 / 条款库</td></tr>
+            <tr><td><b>MaaS 大模型</b></td><td class="arrow-cell">→</td><td>OpenAI 兼容 /v1/chat/completions 客户端，JSON 模式 + 本地规则降级</td></tr>
+            <tr><td><b>ECS</b></td><td class="arrow-cell">→</td><td>uvicorn 单实例，前端纯静态文件直接托管在 /web</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="eyebrow">AI Engine · Degrade by Design</div>
+          <h3 class="card-title">AI 引擎说明<span class="card-sub">降级是特性，不是缺陷</span></h3>
+        </div>
+        <div class="callout callout-info" style="margin:0">.env 未配置 MAAS_API_KEY 时，全链路自动降级为<b>本地规则引擎</b>：通知摘要、三元组抽取、风险判级、周计划理由一步不少，断网也能完整演示。每个结果的引擎标签（大模型 / 本地规则）都如实标注。</div>
+        <div class="callout callout-ok" style="margin:12px 0 0">拿到华为云 MaaS 的 Key 填进 .env 即切换大模型，<b class="mk">代码零改动</b>，页面标签自动变为「大模型」。</div>
+        <div class="callout callout-warn" style="margin:12px 0 0">安全雷达的证据纪律不受引擎影响：判级和置信度由代码计算、检索决定引用哪条法条、大模型只负责把话说成人话且只能引用喂给它的条款——条款库里没有就明说弃权。</div>
+      </div>
+    </div>
+
+    <p class="hint" style="text-align:center;margin:26px 0 8px">掌控校园 Campus Master · FastAPI + MySQL + Redis + MaaS · 前端 /web 共六个页面 · 接口自测见 /docs</p>
+  </div>
+
+  <script>
+    fetch("/health").then(r => r.json()).then(d => {
+      const set = (id, ok) => { const el = document.getElementById(id);
+        el.classList.add(ok ? "is-ok" : "is-bad");
+        el.innerHTML = "<i></i>" + (ok ? "MySQL 已连接" : "MySQL 未连接"); };
+      set("st-mysql", d.mysql === "connected");
+      const r = document.getElementById("st-redis");
+      r.classList.add(d.redis === "connected" ? "is-ok" : "is-bad");
+      r.innerHTML = "<i></i>" + (d.redis === "connected" ? "Redis 已连接" : "Redis 未连接");
+    }).catch(() => {});
+
+    async function dropCache() {
+      const msg = document.getElementById("demo-msg");
+      await fetch("/debug/drop-cache", { method: "POST" });
+      msg.textContent = "已清空全部缓存 ✓ 现在去情报官/图谱刷新看回源";
+      setTimeout(() => msg.textContent = "", 6000);
+    }
+  </script>
+</body>
+</html>
