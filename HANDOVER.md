@@ -127,6 +127,8 @@ tools_handbook_import.py / tools_seed_mock.py
   - **验收环境坑（不是代码 bug）**：browser-use 隐藏浏览器 `document.hidden=true` 且不渲染 → IntersectionObserver 回调永不触发，`.reveal` 全部停在 opacity 0 是预期现象；真浏览器可见即触发（doubao 同款标准做法，没加 failsafe）。
   - **Swagger 按钮 sed 改容错**：按钮文案改短（「接口文档 Swagger ↗」→「接口文档 ↗」），tools_deploy_pages.sh 的撤按钮 sed 从全串匹配改成 `<a class="btn btn-ghost" href="/docs"[^>]*>[^<]*</a>` 正则，以后改文案不用再同步脚本。v=13 → v=14（六页已同步）。
 
+- 2026-10-26（补）公开仓库补 README.md：面向访客的门面（在线 demo 链接 + 功能表 + 快速开始 + 文档索引，静态镜像不在线这点如实写明）；README 不进 gh-pages 镜像（部署脚本只拷 web/）。
+
 - 2026-10-26（GitHub 托管 + Pages 上线）公开仓库 + 静态镜像部署（用户：公开吧，并且部署）：
   - **转公开 + Pages**：免费计划私密仓库开不了 Pages（422），转公开后 `gh api .../pages -X POST` 选 gh-pages /(root) 一次成功；线上 https://kkk9747human.github.io/campus-master/ 实测首页/子页/相对路径/提示条全通，console 仅预期中的接口 404。
   - **Pages 镜像的两个坑**（tools_deploy_pages.sh 内已固化）：① Pages 是项目子路径 `/campus-master/`，页面里 `/web/...` 绝对路径（导航/css/js）和品牌 logo `href="/"` 全会跳到 github.io 根 404——镜像里 sed 改相对路径；② `/docs`（Swagger）后端产物不存在——首页该按钮在镜像里移除。
