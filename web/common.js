@@ -38,3 +38,18 @@
     init();
   }
 })();
+
+/* =====================================================
+   GitHub Pages 静态镜像提示：Pages 上没有后端，接口全部不在线。
+   仅在 *.github.io 域名下出现，本地/云上部署不受影响
+   ===================================================== */
+(function () {
+  if (!location.hostname.endsWith("github.io")) return;
+  const bar = document.createElement("div");
+  bar.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:50;"
+    + "background:#211F1A;color:#F6F3EA;font-size:12px;text-align:center;"
+    + "padding:7px 12px;letter-spacing:.04em";
+  bar.innerHTML = "Static demo on GitHub Pages — 后端接口不在线，仅可浏览界面与排版；完整体验请本地运行（见仓库 DEPLOY.md）";
+  document.body.appendChild(bar);
+  document.body.style.paddingBottom = "32px";
+})();
