@@ -1,0 +1,22 @@
+# 秘密与本地环境绝不进镜像
+.env
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# 本机运行痕迹
+uvicorn.log
+mysqld.log
+_archive/
+
+# 论坛配图：运行时挂卷持久化，不烧进镜像
+uploads/
+
+# 部署文件自身与文档
+Dockerfile
+.dockerignore
+docker-compose.yml
+DEPLOY.md
+HANDOVER.md
+LOCAL_SETUP.md

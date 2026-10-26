@@ -1,0 +1,17 @@
+# ==========================================================
+# 掌控校园 - Python 依赖清单
+# 安装命令: pip install -r requirements.txt
+# ==========================================================
+
+# --- Web 框架 ---
+fastapi>=0.110            # 后端框架：负责提供网页接口(API)
+uvicorn[standard]>=0.29   # 运行 FastAPI 的服务器（standard 版带自动重载等增强）
+
+# --- 华为云数据服务客户端 ---
+pymysql>=1.1              # 连接华为云 RDS for MySQL 的驱动
+cryptography>=42          # pymysql 连接 MySQL 8.x 必需（支持新版密码加密方式）
+redis>=5.0                # 连接华为云 Redis (DCS) 的客户端
+
+# --- 工具 ---
+python-dotenv>=1.0        # 从 .env 文件读取数据库密码等配置（密码不写死在代码里）
+httpx>=0.27               # 第二步调用 AI 大模型 API 时用（提前装好）

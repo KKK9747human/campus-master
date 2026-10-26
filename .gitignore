@@ -1,0 +1,21 @@
+# 敏感配置（含数据库密码），绝不提交
+.env
+
+# Python 运行产物
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 编辑器/系统文件
+.idea/
+.vscode/
+.DS_Store
+
+# 运行产物 / 本地数据
+uploads/
+uvicorn.log
+mysqld.log
+logs/
+_archive/
+*.log

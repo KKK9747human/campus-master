@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23B0432E'/%3E%3Crect x='8' y='8' width='84' height='84' rx='10' fill='none' stroke='%23FCFBF6' stroke-width='5' opacity='.8'/%3E%3Ctext x='50' y='72' font-size='56' text-anchor='middle' fill='%23FCFBF6' font-family='serif' font-weight='700'%3E%E6%8E%A7%3C/text%3E%3C/svg%3E">
+  <title>掌控校园 - 个人中心</title>
+  <link rel="stylesheet" href="common.css?v=12">
+  <style>
+    .profile-card { background: linear-gradient(135deg, #262420 0%, #454034 100%); color: #FCFBF6; border-radius: var(--radius); padding: 20px 22px; }
+    .profile-name { font-size: 19px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+    .profile-name .avatar { width: 40px; height: 40px; border-radius: 12px; background: rgba(255, 255, 255, .2); display: inline-flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 800; }
+    .profile-meta { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; font-size: 12.5px; }
+    .profile-meta span { background: rgba(255, 255, 255, .16); padding: 3px 11px; border-radius: 999px; }
+    .profile-goal { margin-top: 12px; font-size: 13px; opacity: .95; }
+    .path-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+    .path-step:last-child { border-bottom: 0; }
+    .path-num { flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--ink); color: #FCFBF6; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+    .path-goal .path-num { background: var(--warn); }
+    .path-name { font-weight: 600; }
+    .path-desc { font-size: 12px; color: var(--text-sub); }
+  </style>
+  <script src="/web/common.js?v=12" defer></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-mark">控</span>掌控校园</a>
+      <nav class="nav">
+        <a href="/web/notice.html">情报官</a>
+        <a href="/web/kg_demo.html">知识图谱</a>
+        <a href="/web/forum.html">论坛</a>
+        <a href="/web/safety.html">安全雷达</a>
+        <a href="/web/profile.html" class="active">个人中心</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="page-head">
+      <h1 data-ring>个人中心</h1>
+      <span class="page-sub"><b class="mk">填一次身份</b>，图谱筛选、学习路径、论坛署名、风险台账都会跟着走</span>
+      <div class="head-actions"><span class="badge badge-gray" id="cache-badge"></span></div>
+    </div>
+
+    <div class="main-side">
+      <div class="stack">
+        <div class="card">
+          <h3 class="card-title">完善个人信息<span class="card-sub">存 MySQL user_profiles，昵称唯一</span></h3>
+          <div class="grid grid-2" style="gap:0 14px">
+            <div>
+              <label>昵称（站内唯一标识）*</label>
+              <input id="f-nick" placeholder="例：计科2301张同学">
+            </div>
+            <div>
+              <label>身份（决定推荐路径与图谱筛选）*</label>
+              <select id="f-role">
+                <option value="freshman">大一新生 · 打基础</option>
+                <option value="contest">竞赛选手 · 冲蓝桥杯</option>
+                <option value="jobseeker">求职党 · 拿实习</option>
+                <option value="postgrad">考研党 · 进复试</option>
+              </select>
+            </div>
+            <div>
+              <label>学校（决定情报官抓哪里的官方通知）</label>
+              <input id="f-school" list="school-list" placeholder="例：杭州电子科技大学">
+              <datalist id="school-list"><option value="杭州电子科技大学"></datalist>
+            </div>
+            <div>
+              <label>年级</label>
+              <input id="f-grade" placeholder="例：2024级">
+            </div>
+            <div>
+              <label>专业</label>
+              <input id="f-major" placeholder="例：计算机科学与技术">
+            </div>
+            <div>
+              <label>本学期目标</label>
+              <input id="f-goal" placeholder="例：蓝桥杯省一 / 大三暑期实习">
+            </div>
+            <div>
+              <label>联系方式（风险预警提醒用，可空）</label>
+              <input id="f-email" placeholder="例：zs@campus.edu.cn">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-save" onclick="saveProfile()">保存资料</button>
+            <button class="btn btn-ghost" onclick="loadProfile(true)">清缓存后重读</button>
+          </div>
+          <p class="hint" id="save-note" style="margin-top:10px"></p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">我的专属学习路径<span class="card-sub">Redis 缓存 path:{身份}，按上面选的身份实时预览</span></h3>
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn" onclick="loadPath()">按当前身份生成</button>
+            <span class="badge badge-gray" id="path-badge" style="display:none"></span>
+          </div>
+          <div id="path-box" style="margin-top:14px"><div class="empty">保存资料后点上面的按钮生成</div></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">我的风险记录<span class="card-sub">安全雷达台账里属于我的那部分</span></h3>
+          <div class="table-wrap">
+            <table class="data" id="ledger">
+              <thead><tr><th>时间</th><th>场景</th><th>摘要</th><th>等级</th><th>评分</th></tr></thead>
+              <tbody><tr><td colspan="5"><div class="empty">填好昵称后自动加载</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="profile-card">
+          <div class="profile-name"><span class="avatar" id="c-initial">控</span><span id="c-nick">还没建档</span></div>
+          <div class="profile-meta" id="c-meta"></div>
+          <div class="profile-goal" id="c-goal"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">我的发帖<span class="card-sub">署名一致的帖子会进这里，也是图谱来源</span></h3>
+          <div id="mine"><div class="empty">填好昵称后自动加载</div></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">快捷入口</h3>
+          <div class="stack" style="gap:10px">
+            <a class="btn btn-ghost" href="/web/kg_demo.html" style="justify-content:center">按我的身份看知识图谱</a>
+            <a class="btn btn-ghost" href="/web/forum.html" style="justify-content:center">去论坛发经验帖</a>
+            <a class="btn btn-ghost" href="/web/safety.html" style="justify-content:center">安全雷达台账</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = location.origin.startsWith("http") ? "" : "http://127.0.0.1:8100";
+    const ROLES = { freshman: "大一新生", contest: "竞赛选手", jobseeker: "求职党", postgrad: "考研党" };
+    const SCENE_NAME = { job: "求职鉴坑", fraud: "聊天鉴诈", notice: "通知排查" };
+    const LV_NAME = { high_risk: "高危", medium_risk: "中危", low_risk: "低危", likely_safe: "安全" };
+    let current = null;
+
+    const $ = id => document.getElementById(id);
+
+    function fillForm(p) {
+      $("f-nick").value = p.nickname || "";
+      $("f-school").value = p.school || "";
+      $("f-role").value = p.role || "freshman";
+      $("f-grade").value = p.grade || "";
+      $("f-major").value = p.major || "";
+      $("f-goal").value = p.goal || "";
+      $("f-email").value = p.email || "";
+    }
+
+    function renderCard(p) {
+      $("c-nick").textContent = p.nickname;
+      $("c-initial").textContent = p.nickname.slice(0, 1);
+      $("c-meta").innerHTML = [ROLES[p.role], p.school, p.grade, p.major, p.email].filter(Boolean)
+        .map(x => `<span>${esc(x)}</span>`).join("");
+      $("c-goal").textContent = p.goal ? "本学期目标：" + p.goal : "还没写本学期目标，填一下路径推荐更有针对性";
+    }
+
+    function esc(str) {
+      const s = document.createElement("span");
+      s.textContent = str || "";
+      return s.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    async function saveProfile() {
+      const body = {
+        nickname: $("f-nick").value.trim(), school: $("f-school").value.trim(), role: $("f-role").value, grade: $("f-grade").value.trim(),
+        major: $("f-major").value.trim(), goal: $("f-goal").value.trim(), email: $("f-email").value.trim(),
+      };
+      if (!body.nickname) return alert("昵称是站内唯一标识，必须填");
+      const btn = $("btn-save");
+      btn.disabled = true; btn.textContent = "保存中…";
+      try {
+        const res = await fetch(API + "/profile", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        });
+        const d = await res.json();
+        if (!res.ok) { $("save-note").textContent = "⚠️ " + (d.detail || res.status); return; }
+        localStorage.setItem("cm_nickname", d.data.nickname);
+        localStorage.setItem("cm_role", d.data.role);
+        localStorage.setItem("cm_school", d.data.school || "");
+        current = d.data;
+        renderCard(d.data);
+        const b = $("cache-badge");
+        b.style.display = "";
+        b.textContent = "写入 MySQL 成功，profile: 缓存已失效";
+        b.className = "badge badge-warn";
+        $("save-note").textContent = `已写入 MySQL（${d.data.updated_at || "刚刚"}），全站身份已同步，路径缓存按新身份重算`;
+        loadPath(); loadMine(); loadMyLogs();
+      } finally { btn.disabled = false; btn.textContent = "保存资料"; }
+    }
+
+    async function loadProfile(forceFresh) {
+      const nick = $("f-nick").value.trim() || localStorage.getItem("cm_nickname") || "";
+      if (!nick) { $("cache-badge").textContent = "本地无档案"; return; }
+      if (forceFresh) await fetch(API + "/debug/drop-cache", { method: "POST" });
+      const d = await (await fetch(`${API}/profile?nickname=${encodeURIComponent(nick)}`)).json();
+      const b = $("cache-badge");
+      b.style.display = "";
+      b.textContent = (d.from_cache ? "Redis 缓存命中 profile:" + nick : "查 MySQL 并回填缓存") + (d.cache ? " · " + d.cache.ms + "ms" : "");
+      b.className = "badge " + (d.from_cache ? "badge-ok" : "badge-warn");
+      if (!d.data) { $("save-note").textContent = "这个昵称还没有档案，填好点「保存资料」即可建档"; return; }
+      current = d.data;
+      fillForm(d.data);
+      localStorage.setItem("cm_nickname", d.data.nickname);
+      localStorage.setItem("cm_role", d.data.role);
+      localStorage.setItem("cm_school", d.data.school || "");
+      renderCard(d.data);
+      loadPath(); loadMine(); loadMyLogs();
+    }
+
+    async function loadPath() {
+      const role = $("f-role").value;
+      const box = $("path-box"), badge = $("path-badge");
+      const res = await fetch(`${API}/kg/path/${role}`);
+      const d = await res.json();
+      if (!res.ok) { box.innerHTML = `<div class="empty">⚠️ ${d.detail}</div>`; badge.style.display = "none"; return; }
+      badge.style.display = "";
+      badge.textContent = d.from_cache ? "Redis 缓存命中" : "已计算并存入 Redis";
+      badge.className = "badge " + (d.from_cache ? "badge-ok" : "badge-warn");
+      const name_of = { freshman: "大一新生", contest: "竞赛选手", jobseeker: "求职党", postgrad: "考研党" };
+      box.innerHTML = `<p class="hint" style="margin:0 0 8px">${name_of[role]} · 目标「${d.data.goal}」</p>` +
+        d.data.path.map(s => `
+          <div class="path-step${s.name === d.data.goal ? " path-goal" : ""}">
+            <div class="path-num">${s.name === d.data.goal ? "🎯" : s.order}</div>
+            <div><div class="path-name">${esc(s.name)} <span class="tag tag-${s.type}">${({ course: "课程", contest: "竞赛", skill: "经验技能" })[s.type] || s.type}</span></div>
+            <div class="path-desc">${esc(s.description)}</div></div></div>`).join("") +
+        (d.data.extras?.length ? `<p class="hint" style="margin-top:10px">支线可选：${d.data.extras.map(x => esc(x.name)).join("、")}</p>` : "");
+    }
+
+    async function loadMine() {
+      const nick = current?.nickname || localStorage.getItem("cm_nickname") || "";
+      if (!nick) return;
+      const d = await (await fetch(`${API}/posts/latest?filter=mine&author=${encodeURIComponent(nick)}&limit=8`)).json();
+      document.getElementById("mine").innerHTML = d.data.map(p => `
+        <div class="item">
+          <div class="item-title">${p.is_essence ? '<span class="badge post-essence">精华</span> ' : ""}${esc(p.title)}</div>
+          <div class="path-desc">${esc(p.content.slice(0, 52))}${p.content.length > 52 ? "…" : ""}</div>
+          <div class="item-meta"><span>👍 ${p.likes}</span><span>${(p.created_at || "").replace("T", " ").slice(0, 16)}</span></div>
+        </div>`).join("") || '<div class="empty">还没发过经验帖</div>';
+    }
+
+    async function loadMyLogs() {
+      const nick = current?.nickname || localStorage.getItem("cm_nickname") || "";
+      if (!nick) return;
+      const d = await (await fetch(`${API}/safety/logs?nickname=${encodeURIComponent(nick)}&limit=8`)).json();
+      document.querySelector("#ledger tbody").innerHTML = d.data.map(r => `
+        <tr>
+          <td class="nowrap">${(r.created_at || "").replace("T", " ").slice(5, 16)}</td>
+          <td class="nowrap">${SCENE_NAME[r.scene] || r.scene}</td>
+          <td>${esc(r.excerpt)}</td>
+          <td class="nowrap">${LV_NAME[r.level] || r.level}</td>
+          <td class="nowrap">${r.score}</td>
+        </tr>`).join("") || '<tr><td colspan="5"><div class="empty">还没有风险记录，是好事</div></td></tr>';
+    }
+
+    // 进来先带出上次存的昵称；昵称输入变化时同步刷新「我的发帖」
+    $("f-nick").value = localStorage.getItem("cm_nickname") || "";
+    $("f-role").value = localStorage.getItem("cm_role") || "freshman";
+    if ($("f-nick").value) loadProfile(false); else loadPath();
+    $("f-nick").addEventListener("change", () => { loadProfile(false); });
+  </script>
+</body>
+</html>

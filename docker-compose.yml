@@ -1,0 +1,70 @@
+# ==========================================================
+# 掌控校园 - 本地一键起全套（app + MySQL 8.4 + Redis）
+#   docker compose up -d --build
+#   首次启动会自动执行 sql/init_tables.sql 建表
+#   验证：curl http://127.0.0.1:8100/health
+#
+# 云上（RDS + DCS）不用这份全栈文件：
+#   只构建并跑 app 容器、.env 里填 RDS/DCS 连接信息，
+#   见 DEPLOY.md「华为云部署」。
+# ==========================================================
+services:
+  app:
+    build: .
+    container_name: campus-app
+    ports:
+      - "8100:8100"
+    env_file: .env
+    environment:
+      # 覆盖 .env 里的 127.0.0.1：容器之间用服务名互访（compose 网络内）
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+    volumes:
+      - ./uploads:/app/uploads          # 论坛配图持久化
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8.4
+    container_name: campus-mysql
+    # 不发布 3306 到宿主机：避免和本机已装的 MySQL 撞端口，也少暴露一个面
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-campus_master}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/init_tables.sql:/docker-entrypoint-initdb.d/init_tables.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    container_name: campus-redis
+    # 仅容器网络内可达；本地这套不设密码（.env 里 REDIS_PASSWORD 留空即可）
+    command: ["redis-server"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  mysql-data:
+  redis-data:
