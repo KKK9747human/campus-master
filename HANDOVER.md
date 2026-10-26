@@ -116,9 +116,15 @@ tools_handbook_import.py / tools_seed_mock.py
 - 2026-10-26 第十二轮（圈阅豁免减少动态 + 补笔 + 手绘下划线）完成：用户端看不到画圈过程，定性=系统「减少动态效果」把全局动画压成瞬时；圈阅豁免该开关（纯描边低动效），主圈后加补笔小尾巴，card-title 加手绘朱砂下划线；六页 v=11，浏览器逐项验证（豁免规则在 kill-switch 之后、尾巴 0.418s 延迟 2.25s、finish() 终态 dashoffset 0、console 全净）。
 - 2026-10-26 第十三轮（首页排版 + 纸质感 + 荧光笔）完成：`.grid-eq` 等高排版修三行卡片底边参差（桌面宽度模拟实测 420×3 / 611×2 / 561×2 全等，按钮压卡底）；`.card` 铺 feTurbulence 纤维噪点（opacity .05）出纸质感；小红书荧光笔 `.mk`（黄/绿/粉三色手绘边缘 SVG，避开 hero 的 .hl 渐变字类名），首页 hero 三连 + AI 卡「代码零改动」+ 五页 page-sub 各一处；六页 v=12，console 全净。
 - 2026-10-26 第十四轮（tooltip 溢出 + 发帖弹窗产品化）完成：kg tooltip 补 `white-space:normal` 实测 300px 内折行；论坛发帖从右栏内嵌卡改为居中弹窗（页头/右栏双入口），代码块带语言标签 + 复制 + **js 可运行**（Web Worker 沙箱，console 捕获 + 3 秒死循环强杀，实测正常输出/报错/超时三路全通），草稿 localStorage 随输入自动保存、重开弹窗恢复、发布成功才清；本轮只改 forum.html/kg_demo.html 内联代码，common.css/common.js 未动 **v 保持 12**；验收草稿已清，console 全净。
-- 2026-10-26 GitHub 托管：**私密仓库 https://github.com/KKK9747human/campus-master**（main 全量代码首提交 133f8a0；.gitignore 护住 .env/venv/日志/uploads/_archive，提交前索引密钥扫描通过、.env 未跟踪）。gh-pages 分支已备好 web/ 静态镜像（`git subtree split --prefix=web -b gh-pages`，以后 web/ 更新后重跑 split + push 即同步）。**免费计划私密仓库开不了 Pages**（API 422）；用户决定保持私密暂不开——以后升级 GitHub Pro 或转公开，去 Settings→Pages 选 gh-pages / (root) 即可上线。注：Pages 只能托管静态前端，后端接口仍需本地/云上运行。
+- 2026-10-26 GitHub 托管 + Pages 上线：**公开仓库 https://github.com/KKK9747human/campus-master**（先私密后按用户要求转公开；.gitignore 护住 .env/venv/日志/uploads/_archive，提交前索引密钥扫描通过、.env 未跟踪）。**线上地址 https://kkk9747human.github.io/campus-master/**——gh-pages 分支 = web/ 静态镜像，由 `bash tools_deploy_pages.sh` 维护（copy + 三条 sed：/web/→相对、品牌 logo href=/→index.html、撤 /docs 入口；**改完 web/ 跑一次即可**，Pages 构建约 1 分钟）。common.js 带 Pages 探测：仅 *.github.io 域名在页底出「Static demo」提示条（后端不在线，接口 404 属预期），本地/云上不受影响。v=13。
 
 ## 六、最近改动（倒序）
+
+- 2026-10-26（GitHub 托管 + Pages 上线）公开仓库 + 静态镜像部署（用户：公开吧，并且部署）：
+  - **转公开 + Pages**：免费计划私密仓库开不了 Pages（422），转公开后 `gh api .../pages -X POST` 选 gh-pages /(root) 一次成功；线上 https://kkk9747human.github.io/campus-master/ 实测首页/子页/相对路径/提示条全通，console 仅预期中的接口 404。
+  - **Pages 镜像的两个坑**（tools_deploy_pages.sh 内已固化）：① Pages 是项目子路径 `/campus-master/`，页面里 `/web/...` 绝对路径（导航/css/js）和品牌 logo `href="/"` 全会跳到 github.io 根 404——镜像里 sed 改相对路径；② `/docs`（Swagger）后端产物不存在——首页该按钮在镜像里移除。
+  - **静态演示提示条**：common.js 探测 `location.hostname` 是否 *.github.io，是则页底挂墨色提示条「后端接口不在线，仅可浏览界面」；本地/云部署不受影响。index.html 因此补了 common.js 引用，v=12 → v=13（六页已同步）。
+  - **部署流程**：以后改完 web/ → `bash tools_deploy_pages.sh` 一条命令（worktree + sed + 提交推 gh-pages），main 照常手动 commit/push。
 
 - 2026-10-26（第十四轮）tooltip 溢出 + 发帖弹窗（用户：①如图字超出边框 ②发帖弹新窗口+代码格式+可运行+随时保存 ③按产品设计）：
   - **tooltip 溢出**：ECharts tooltip 容器默认 `white-space: nowrap`，内层 `max-width` 管不住不断行的中文长句。修复=formatter 里名称行单独 nowrap、描述 div 开 `white-space:normal; max-width:300px; line-height:1.65`。实测：46 字描述折进 300px，scrollWidth==clientWidth，白框 316×81 不再被冲破。
@@ -201,7 +207,7 @@ tools_handbook_import.py / tools_seed_mock.py
 - Qoder 内置浏览器 `prefers-reduced-motion: reduce` 常开：动效在里面全被 kill-switch 压成 0.01ms（getComputedStyle 显示 `1e-05s`），别误判成 CSS 没写上；验收动效要用 CSSOM 查规则或换真机浏览器。
 - **ECharts graph 的 `series.zoom` 是乘在「节点包围盒铺满绘图区」之上的**：布局 'none' 时 ECharts 把节点坐标包围盒独立拉伸 x/y 铺满绘图区——少节点时包围盒小、被吹到巨大，且内容比例 ≠ 绘图区比例时横竖缩放不同必然变形。现行解法见 kg_demo.html `gridLayout()`：对坐标做**各向异性映射**把内容包围盒真正整成绘图区比例（只改 w/h 数值不动坐标是无效的，第一版栽过）+ `zoom = W/plotW` 抵消铺满；series 的 left/right/top/bottom 必须与布局函数的留白假设一致（80/80/50/70），对不上铺满倍率就错。
 - **隐藏页签里 inline style 不落 computed style**：Qoder 内置浏览器 visibilityState=hidden 时，JS 改 el.style.height 后 getComputedStyle/rect 仍是旧值（连 background 都不刷）——要用 `chart.getWidth()/getHeight()`（ECharts 自己认的尺寸）当真值并无条件 `chart.resize()`。
-- **cache-bust 只救 HTML，救不了子资源**：`?cb=x1` 换了页面 URL，但 common.css/common.js 还是磁盘缓存——轻则「页面新 CSS 旧」的劈叉（eyebrow 有字距没字体），重则第 10 轮的黑椭圆惨案（HTML 里有 SVG、旧 CSS 里没有 .title-ring 规则 → SVG 默认黑填充糊满 hero）。**根治（第 11 轮）**：六页的 `<link>`/`<script>` 引用已带 `?v=12` 版本号——**每次改 common.css/common.js 必须把六页的 v= +1**（sed 一行的事），用户端即自动拿新文件，不靠任何人强刷。验收时浏览器 MCP 侧仍建议 `reload ignoreCache`。
+- **cache-bust 只救 HTML，救不了子资源**：`?cb=x1` 换了页面 URL，但 common.css/common.js 还是磁盘缓存——轻则「页面新 CSS 旧」的劈叉（eyebrow 有字距没字体），重则第 10 轮的黑椭圆惨案（HTML 里有 SVG、旧 CSS 里没有 .title-ring 规则 → SVG 默认黑填充糊满 hero）。**根治（第 11 轮）**：六页的 `<link>`/`<script>` 引用已带 `?v=13` 版本号——**每次改 common.css/common.js 必须把六页的 v= +1**（sed 一行的事），用户端即自动拿新文件，不靠任何人强刷。验收时浏览器 MCP 侧仍建议 `reload ignoreCache`。
 - **部署物料未做镜像级验证**：本机 Docker Desktop 守护进程没启动（`docker build` 连不上 npipe），compose config 语法已过。要补验：启动 Docker Desktop 后 `docker build -t campus-master .`，再 `docker run --rm --env-file .env -p 8199:8100 campus-master` 冒烟（容器内连 127.0.0.1 的 MySQL 会显示未连接，属预期，只验进程能起、/health 有 JSON）。
 
 ## 八、会话收工清单
