@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23B0432E'/%3E%3Crect x='8' y='8' width='84' height='84' rx='10' fill='none' stroke='%23FCFBF6' stroke-width='5' opacity='.8'/%3E%3Ctext x='50' y='72' font-size='56' text-anchor='middle' fill='%23FCFBF6' font-family='serif' font-weight='700'%3E%E6%8E%A7%3C/text%3E%3C/svg%3E">
   <title>掌控校园 - 知识图谱与学习路径</title>
-  <link rel="stylesheet" href="common.css?v=12">
+  <link rel="stylesheet" href="common.css?v=13">
   <script src="echarts.min.js"></script>
   <style>
     #chart { width: 100%; height: 660px; }
@@ -43,18 +43,18 @@
     .plan-reason { font-size: 12.5px; color: var(--text-sub); margin-top: 5px; line-height: 1.65; }
     .plan-acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 7px; }
   </style>
-  <script src="/web/common.js?v=12" defer></script>
+  <script src="common.js?v=13" defer></script>
 </head>
 <body>
   <div class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="/"><span class="brand-mark">控</span>掌控校园</a>
       <nav class="nav">
-        <a href="/web/notice.html">情报官</a>
-        <a href="/web/kg_demo.html" class="active">知识图谱</a>
-        <a href="/web/forum.html">论坛</a>
-        <a href="/web/safety.html">安全雷达</a>
-        <a href="/web/profile.html">个人中心</a>
+        <a href="notice.html">情报官</a>
+        <a href="kg_demo.html" class="active">知识图谱</a>
+        <a href="forum.html">论坛</a>
+        <a href="safety.html">安全雷达</a>
+        <a href="profile.html">个人中心</a>
       </nav>
     </div>
   </div>
@@ -64,7 +64,7 @@
       <h1 data-ring>课程 · 竞赛 · 经验 知识网络</h1>
       <span class="page-sub">数据来自 MySQL kg_nodes / kg_edges · 搜一个概念，以它为中心<b class="mk mk-green">织出知识网格</b> · 圈层越近，关联越紧</span>
       <div class="head-actions">
-        <a class="btn btn-ghost" href="/web/forum.html">发布经验帖进图谱</a>
+        <a class="btn btn-ghost" href="forum.html">发布经验帖进图谱</a>
       </div>
     </div>
 
@@ -415,7 +415,7 @@
         </div>
         <p class="hint" style="margin:0 0 8px">${esc(stage)}${n.on_path ? " · 在个性化主线上" : ""} · 关联 ${rels.length} 个概念</p>
         <p style="font-size:13px;line-height:1.75;margin:0 0 6px;color:var(--text-sub)">${esc(n.description) || "（这个节点还没有说明）"}</p>
-        ${post ? `<p class="hint" style="margin:0">来源经验帖：<a class="linkish" href="/web/forum.html" style="font-size:12px">${esc(post.title)}</a> · ${esc(post.author)} · ${post.likes} 赞</p>`
+        ${post ? `<p class="hint" style="margin:0">来源经验帖：<a class="linkish" href="forum.html" style="font-size:12px">${esc(post.title)}</a> · ${esc(post.author)} · ${post.likes} 赞</p>`
                : n.source_post_id ? `<p class="hint" style="margin:0">来源经验帖 #${n.source_post_id}（列表里已经翻不到了）</p>`
                                   : `<p class="hint" style="margin:0">来源：课程/竞赛基础数据，不是帖子抽出来的</p>`}
         ${rels.length ? `<ul class="rel-list">${lines}</ul>` : `<p class="hint" style="margin:8px 0 0">它暂时还没有关系，是个孤岛节点。</p>`}
@@ -466,7 +466,7 @@
       const box = document.getElementById("study-box");
       if (!nick) {
         box.innerHTML = `<div class="callout callout-warn" style="margin:0">
-          还没有昵称 — <a href="/web/profile.html" style="color:inherit;font-weight:700">去个人中心填一个</a>，
+          还没有昵称 — <a href="profile.html" style="color:inherit;font-weight:700">去个人中心填一个</a>，
           清单和 AI 规划才知道排给谁。</div>`;
         document.getElementById("plan-box").innerHTML = "";
         return;

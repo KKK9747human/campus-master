@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='%23B0432E'/%3E%3Crect x='8' y='8' width='84' height='84' rx='10' fill='none' stroke='%23FCFBF6' stroke-width='5' opacity='.8'/%3E%3Ctext x='50' y='72' font-size='56' text-anchor='middle' fill='%23FCFBF6' font-family='serif' font-weight='700'%3E%E6%8E%A7%3C/text%3E%3C/svg%3E">
   <title>掌控校园 - 校园信息一体化平台</title>
-  <link rel="stylesheet" href="/web/common.css?v=12">
+  <link rel="stylesheet" href="common.css?v=13">
+  <script src="common.js?v=13" defer></script>
   <style>
     .hero { text-align: center; padding: 52px 24px 42px; position: relative; }
     .hero-seal {
@@ -71,11 +72,11 @@
     <div class="topbar-inner">
       <a class="brand" href="/"><span class="brand-mark">控</span>掌控校园</a>
       <nav class="nav">
-        <a href="/web/notice.html">情报官</a>
-        <a href="/web/kg_demo.html">知识图谱</a>
-        <a href="/web/forum.html">论坛</a>
-        <a href="/web/safety.html">安全雷达</a>
-        <a href="/web/profile.html">个人中心</a>
+        <a href="notice.html">情报官</a>
+        <a href="kg_demo.html">知识图谱</a>
+        <a href="forum.html">论坛</a>
+        <a href="safety.html">安全雷达</a>
+        <a href="profile.html">个人中心</a>
       </nav>
     </div>
   </div>
@@ -92,8 +93,8 @@
         <span class="tech-chip">ECharts</span><span class="tech-chip">纯 HTML 前端 · 零构建</span>
       </div>
       <div class="hero-btns">
-        <a class="btn" href="/web/notice.html">进入平台 →</a>
-        <a class="btn btn-ghost" href="/docs" target="_blank" rel="noopener">接口文档 Swagger ↗</a>
+        <a class="btn" href="notice.html">进入平台 →</a>
+        
         <span class="status-dot" id="st-mysql"><i></i>MySQL</span>
         <span class="status-dot" id="st-redis"><i></i>Redis</span>
       </div>
@@ -116,7 +117,7 @@
           <li>AI 一句话摘要，强制 <code>[来源: xx]</code> 溯源，点得进原文</li>
           <li>手动贴入兜底；首页列表走 Redis 缓存，10 分钟回源一次</li>
         </ul>
-        <a class="btn btn-ghost mod-link" href="/web/notice.html">去情报官 →</a>
+        <a class="btn btn-ghost mod-link" href="notice.html">去情报官 →</a>
       </div>
       <div class="card">
         <div class="card-head">
@@ -128,7 +129,7 @@
           <li>搜索任一概念即以其为中心织出知识网格：内圈直接相关、外圈两跳关联</li>
           <li>点节点换中心探索、加学习清单，AI 沿前置边补依赖、排出周计划</li>
         </ul>
-        <a class="btn btn-ghost mod-link" href="/web/kg_demo.html">去图谱 →</a>
+        <a class="btn btn-ghost mod-link" href="kg_demo.html">去图谱 →</a>
       </div>
       <div class="card">
         <div class="card-head">
@@ -140,7 +141,7 @@
           <li>四跳推理链：富化 → 判定 → 条款检索 → 链路解释，每跳引擎可辨</li>
           <li>结论必有编号证据 E + 法条原文 C；条款库没覆盖就明说，绝不编条款</li>
         </ul>
-        <a class="btn btn-ghost mod-link" href="/web/safety.html">去雷达 →</a>
+        <a class="btn btn-ghost mod-link" href="safety.html">去雷达 →</a>
       </div>
     </div>
 
@@ -155,8 +156,8 @@
           <li><b>个人中心</b>：昵称唯一档案（学校/身份/专业），身份驱动图谱筛选、路径推荐与台账归属；档案走 profile:{昵称} 缓存</li>
         </ul>
         <div class="btn-row">
-          <a class="btn btn-ghost" href="/web/forum.html">去论坛 →</a>
-          <a class="btn btn-ghost" href="/web/profile.html">去个人中心 →</a>
+          <a class="btn btn-ghost" href="forum.html">去论坛 →</a>
+          <a class="btn btn-ghost" href="profile.html">去个人中心 →</a>
         </div>
       </div>
       <div class="card">
