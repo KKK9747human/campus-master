@@ -116,6 +116,7 @@ tools_handbook_import.py / tools_seed_mock.py
 - 2026-10-26 第十二轮（圈阅豁免减少动态 + 补笔 + 手绘下划线）完成：用户端看不到画圈过程，定性=系统「减少动态效果」把全局动画压成瞬时；圈阅豁免该开关（纯描边低动效），主圈后加补笔小尾巴，card-title 加手绘朱砂下划线；六页 v=11，浏览器逐项验证（豁免规则在 kill-switch 之后、尾巴 0.418s 延迟 2.25s、finish() 终态 dashoffset 0、console 全净）。
 - 2026-10-26 第十三轮（首页排版 + 纸质感 + 荧光笔）完成：`.grid-eq` 等高排版修三行卡片底边参差（桌面宽度模拟实测 420×3 / 611×2 / 561×2 全等，按钮压卡底）；`.card` 铺 feTurbulence 纤维噪点（opacity .05）出纸质感；小红书荧光笔 `.mk`（黄/绿/粉三色手绘边缘 SVG，避开 hero 的 .hl 渐变字类名），首页 hero 三连 + AI 卡「代码零改动」+ 五页 page-sub 各一处；六页 v=12，console 全净。
 - 2026-10-26 第十四轮（tooltip 溢出 + 发帖弹窗产品化）完成：kg tooltip 补 `white-space:normal` 实测 300px 内折行；论坛发帖从右栏内嵌卡改为居中弹窗（页头/右栏双入口），代码块带语言标签 + 复制 + **js 可运行**（Web Worker 沙箱，console 捕获 + 3 秒死循环强杀，实测正常输出/报错/超时三路全通），草稿 localStorage 随输入自动保存、重开弹窗恢复、发布成功才清；本轮只改 forum.html/kg_demo.html 内联代码，common.css/common.js 未动 **v 保持 12**；验收草稿已清，console 全净。
+- 2026-10-26 GitHub 托管：**私密仓库 https://github.com/KKK9747human/campus-master**（main 全量代码首提交 133f8a0；.gitignore 护住 .env/venv/日志/uploads/_archive，提交前索引密钥扫描通过、.env 未跟踪）。gh-pages 分支已备好 web/ 静态镜像（`git subtree split --prefix=web -b gh-pages`，以后 web/ 更新后重跑 split + push 即同步）。**免费计划私密仓库开不了 Pages**（API 422）；用户决定保持私密暂不开——以后升级 GitHub Pro 或转公开，去 Settings→Pages 选 gh-pages / (root) 即可上线。注：Pages 只能托管静态前端，后端接口仍需本地/云上运行。
 
 ## 六、最近改动（倒序）
 
