@@ -12,7 +12,7 @@
 页面（顶栏五入口）：
 | 页面 | 职责 |
 |---|---|
-| `/` | 落地页（web/index.html，后端根路由直出）：项目故事、三模块卡片、评委五步动线、云上映射、AI 降级说明、清缓存演示按钮、MySQL/Redis 实时状态灯 |
+| `/` | 落地页（web/index.html，后端根路由直出）：一句话故事 + 三模块一句话卡 + 华为云服务映射 + 技术栈跑马灯 + MySQL/Redis 实时状态灯；演示动线与 AI 降级说明在 LOCAL_SETUP.md 七点五 |
 | `/web/notice.html` | 情报官：官方源聚合为主信源（可溯源），手动贴入兜底 |
 | `/web/kg_demo.html` | 知识图谱：搜索概念织知识网格（中心+双环）、点节点换中心、加入清单、?focus= 直达 |
 | `/web/forum.html` | 经验论坛：markdown-lite 编辑器+配图上传，点赞满 30 自动进精华 |
@@ -116,9 +116,16 @@ tools_handbook_import.py / tools_seed_mock.py
 - 2026-10-26 第十二轮（圈阅豁免减少动态 + 补笔 + 手绘下划线）完成：用户端看不到画圈过程，定性=系统「减少动态效果」把全局动画压成瞬时；圈阅豁免该开关（纯描边低动效），主圈后加补笔小尾巴，card-title 加手绘朱砂下划线；六页 v=11，浏览器逐项验证（豁免规则在 kill-switch 之后、尾巴 0.418s 延迟 2.25s、finish() 终态 dashoffset 0、console 全净）。
 - 2026-10-26 第十三轮（首页排版 + 纸质感 + 荧光笔）完成：`.grid-eq` 等高排版修三行卡片底边参差（桌面宽度模拟实测 420×3 / 611×2 / 561×2 全等，按钮压卡底）；`.card` 铺 feTurbulence 纤维噪点（opacity .05）出纸质感；小红书荧光笔 `.mk`（黄/绿/粉三色手绘边缘 SVG，避开 hero 的 .hl 渐变字类名），首页 hero 三连 + AI 卡「代码零改动」+ 五页 page-sub 各一处；六页 v=12，console 全净。
 - 2026-10-26 第十四轮（tooltip 溢出 + 发帖弹窗产品化）完成：kg tooltip 补 `white-space:normal` 实测 300px 内折行；论坛发帖从右栏内嵌卡改为居中弹窗（页头/右栏双入口），代码块带语言标签 + 复制 + **js 可运行**（Web Worker 沙箱，console 捕获 + 3 秒死循环强杀，实测正常输出/报错/超时三路全通），草稿 localStorage 随输入自动保存、重开弹窗恢复、发布成功才清；本轮只改 forum.html/kg_demo.html 内联代码，common.css/common.js 未动 **v 保持 12**；验收草稿已清，console 全净。
-- 2026-10-26 GitHub 托管 + Pages 上线：**公开仓库 https://github.com/KKK9747human/campus-master**（先私密后按用户要求转公开；.gitignore 护住 .env/venv/日志/uploads/_archive，提交前索引密钥扫描通过、.env 未跟踪）。**线上地址 https://kkk9747human.github.io/campus-master/**——gh-pages 分支 = web/ 静态镜像，由 `bash tools_deploy_pages.sh` 维护（copy + 三条 sed：/web/→相对、品牌 logo href=/→index.html、撤 /docs 入口；**改完 web/ 跑一次即可**，Pages 构建约 1 分钟）。common.js 带 Pages 探测：仅 *.github.io 域名在页底出「Static demo」提示条（后端不在线，接口 404 属预期），本地/云上不受影响。v=13。
+- 2026-10-26 GitHub 托管 + Pages 上线：**公开仓库 https://github.com/KKK9747human/campus-master**（先私密后按用户要求转公开；.gitignore 护住 .env/venv/日志/uploads/_archive，提交前索引密钥扫描通过、.env 未跟踪）。**线上地址 https://kkk9747human.github.io/campus-master/**——gh-pages 分支 = web/ 静态镜像，由 `bash tools_deploy_pages.sh` 维护（copy + 三条 sed：/web/→相对、品牌 logo href=/→index.html、撤 /docs 入口；**改完 web/ 跑一次即可**，Pages 构建约 1 分钟）。common.js 带 Pages 探测：仅 *.github.io 域名在页底出「Static demo」提示条（后端不在线，接口 404 属预期），本地/云上不受影响。v=14（第十五轮起）。
 
 ## 六、最近改动（倒序）
+
+- 2026-10-26（第十五轮）首页精简 + 跑马灯真滚动 + 动画借鉴 doubao-samurai-opt（用户：① 首页字太多，删掉「给评委看」等非正式语句，说明性文字进项目文档 ② 跑马灯做成滚动循环，动画参考 E:\code\doubao-samurai-opt）：
+  - **index.html 推倒重写（232 行 → 150 行）**：删掉「给评委的演示动线」卡（steps+清缓存按钮）、AI 引擎说明卡、模块卡的长 bullet 列表、hero 长段落——全部下沉：演示动线五步 + 清缓存徽章验法进 `LOCAL_SETUP.md` 七点五（原有的「演示动线建议」段落扩成 ①建档②图谱③发帖④情报官⑤雷达 完整版），AI 降级说明本来就在七点五有。模块卡改一句话 `mod-line`（情报官/图谱/雷达各一句 + 跳转按钮），底排剩 论坛&个人中心 + 华为云服务映射 两卡。`dropCache()`/`#demo-msg` 从首页移除（后端 /debug/drop-cache 保留）。落地页行头描述同步（HANDOVER 一、LOCAL_SETUP 七点五表格）。
+  - **跑马灯静止的根因 = kill-switch**：用户机器系统级「减少动态效果」→ common.css 全局把 animation 压成 .01ms×1 次，42s 无限横滚直接变成一排死文字。豁免：在圈阅豁免同块追加 `.marquee-track { animation-duration: 42s !important; animation-iteration-count: infinite !important; }`（匀速横滚是信息带的身份动作）。验收实测 computed 42s/infinite ✓。
+  - **借鉴 doubao-samurai-opt 的四拍**：① 滚动揭示 `.reveal`（opacity+translateY，IO threshold .12，同屏按 DOM 序错峰 90ms；**落定 1.2s 后摘掉 reveal/in 类**，否则慢速 transition 会吞掉卡片 hover 的跟手度）；② 印章 `sealFloat` 9s 缓浮（sealStamp 落定后 2.75s 接力，index 内联 reduced-motion 豁免完整顶回）；③ `.card` hover 缓动 .2s ease → .45s cubic-bezier(.22,.61,.36,1)（premium 手感，全站生效）；④ tech-chip 悬浮上浮 2px。
+  - **验收环境坑（不是代码 bug）**：browser-use 隐藏浏览器 `document.hidden=true` 且不渲染 → IntersectionObserver 回调永不触发，`.reveal` 全部停在 opacity 0 是预期现象；真浏览器可见即触发（doubao 同款标准做法，没加 failsafe）。
+  - **Swagger 按钮 sed 改容错**：按钮文案改短（「接口文档 Swagger ↗」→「接口文档 ↗」），tools_deploy_pages.sh 的撤按钮 sed 从全串匹配改成 `<a class="btn btn-ghost" href="/docs"[^>]*>[^<]*</a>` 正则，以后改文案不用再同步脚本。v=13 → v=14（六页已同步）。
 
 - 2026-10-26（GitHub 托管 + Pages 上线）公开仓库 + 静态镜像部署（用户：公开吧，并且部署）：
   - **转公开 + Pages**：免费计划私密仓库开不了 Pages（422），转公开后 `gh api .../pages -X POST` 选 gh-pages /(root) 一次成功；线上 https://kkk9747human.github.io/campus-master/ 实测首页/子页/相对路径/提示条全通，console 仅预期中的接口 404。
@@ -207,7 +214,7 @@ tools_handbook_import.py / tools_seed_mock.py
 - Qoder 内置浏览器 `prefers-reduced-motion: reduce` 常开：动效在里面全被 kill-switch 压成 0.01ms（getComputedStyle 显示 `1e-05s`），别误判成 CSS 没写上；验收动效要用 CSSOM 查规则或换真机浏览器。
 - **ECharts graph 的 `series.zoom` 是乘在「节点包围盒铺满绘图区」之上的**：布局 'none' 时 ECharts 把节点坐标包围盒独立拉伸 x/y 铺满绘图区——少节点时包围盒小、被吹到巨大，且内容比例 ≠ 绘图区比例时横竖缩放不同必然变形。现行解法见 kg_demo.html `gridLayout()`：对坐标做**各向异性映射**把内容包围盒真正整成绘图区比例（只改 w/h 数值不动坐标是无效的，第一版栽过）+ `zoom = W/plotW` 抵消铺满；series 的 left/right/top/bottom 必须与布局函数的留白假设一致（80/80/50/70），对不上铺满倍率就错。
 - **隐藏页签里 inline style 不落 computed style**：Qoder 内置浏览器 visibilityState=hidden 时，JS 改 el.style.height 后 getComputedStyle/rect 仍是旧值（连 background 都不刷）——要用 `chart.getWidth()/getHeight()`（ECharts 自己认的尺寸）当真值并无条件 `chart.resize()`。
-- **cache-bust 只救 HTML，救不了子资源**：`?cb=x1` 换了页面 URL，但 common.css/common.js 还是磁盘缓存——轻则「页面新 CSS 旧」的劈叉（eyebrow 有字距没字体），重则第 10 轮的黑椭圆惨案（HTML 里有 SVG、旧 CSS 里没有 .title-ring 规则 → SVG 默认黑填充糊满 hero）。**根治（第 11 轮）**：六页的 `<link>`/`<script>` 引用已带 `?v=13` 版本号——**每次改 common.css/common.js 必须把六页的 v= +1**（sed 一行的事），用户端即自动拿新文件，不靠任何人强刷。验收时浏览器 MCP 侧仍建议 `reload ignoreCache`。
+- **cache-bust 只救 HTML，救不了子资源**：`?cb=x1` 换了页面 URL，但 common.css/common.js 还是磁盘缓存——轻则「页面新 CSS 旧」的劈叉（eyebrow 有字距没字体），重则第 10 轮的黑椭圆惨案（HTML 里有 SVG、旧 CSS 里没有 .title-ring 规则 → SVG 默认黑填充糊满 hero）。**根治（第 11 轮）**：六页的 `<link>`/`<script>` 引用已带 `?v=14` 版本号——**每次改 common.css/common.js 必须把六页的 v= +1**（sed 一行的事），用户端即自动拿新文件，不靠任何人强刷。验收时浏览器 MCP 侧仍建议 `reload ignoreCache`。
 - **部署物料未做镜像级验证**：本机 Docker Desktop 守护进程没启动（`docker build` 连不上 npipe），compose config 语法已过。要补验：启动 Docker Desktop 后 `docker build -t campus-master .`，再 `docker run --rm --env-file .env -p 8199:8100 campus-master` 冒烟（容器内连 127.0.0.1 的 MySQL 会显示未连接，属预期，只验进程能起、/health 有 JSON）。
 
 ## 八、会话收工清单

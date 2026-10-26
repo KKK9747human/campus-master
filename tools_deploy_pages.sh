@@ -18,8 +18,8 @@ cp web/*.html web/*.css web/*.js _pages_out/
 sed -i 's|/web/||g' _pages_out/*.html
 # 品牌 logo 的 href="/" 在 Pages 会跳到 github.io 根路径，改回首页
 sed -i 's|class="brand" href="/"|class="brand" href="index.html"|' _pages_out/*.html
-# Pages 上没有 /docs（后端 Swagger），撤掉首页这个入口
-sed -i 's|<a class="btn btn-ghost" href="/docs" target="_blank" rel="noopener">接口文档 Swagger ↗</a>||' _pages_out/index.html
+# Pages 上没有 /docs（后端 Swagger），撤掉首页这个入口（不锁按钮文案）
+sed -i -E 's|<a class="btn btn-ghost" href="/docs"[^>]*>[^<]*</a>||' _pages_out/index.html
 
 cd _pages_out
 git add -A

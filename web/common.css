@@ -283,8 +283,11 @@ textarea { resize: vertical; min-height: 96px; }
   0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; }
 }
 
-/* 卡片：悬浮时硬阴影朝反方向长一点 + 边框透一点朱砂，像把铅字拿起来 */
-.card { transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
+/* 卡片：悬浮时硬阴影朝反方向长一点 + 边框透一点朱砂，像把铅字拿起来
+   缓动走慢速高阶曲线（参考 doubao-samurai 的 premium 手感） */
+.card { transition: box-shadow .45s cubic-bezier(.22, .61, .36, 1),
+                    transform .45s cubic-bezier(.22, .61, .36, 1),
+                    border-color .45s cubic-bezier(.22, .61, .36, 1); }
 @media (hover: hover) {
   .card:hover { box-shadow: 6px 6px 0 rgba(176, 67, 46, .12); transform: translate(-1px, -1px); border-color: #D4CEB8; }
 }
@@ -381,5 +384,10 @@ mark.mk, .mk {
     animation-duration: calc(var(--ring-dur, 1.4s) * .22) !important;
     animation-delay: calc(var(--ring-delay, .15s) + var(--ring-dur, 1.4s)) !important;
     animation-iteration-count: 1 !important;
+  }
+  /* 跑马灯同理：匀速横滚是这条信息带的身份，压掉就成了死文字 */
+  .marquee-track {
+    animation-duration: 42s !important;
+    animation-iteration-count: infinite !important;
   }
 }
